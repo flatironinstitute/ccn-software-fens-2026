@@ -1,30 +1,22 @@
-pipeline {
-  agent none
-  options {
-    disableConcurrentBuilds(abortPrevious: true)
-    buildDiscarder(logRotator(numToKeepStr: '8', daysToKeepStr: '20'))
-    timeout(time: 2, unit: 'HOURS')
-  }
-  stages {
-    stage('docs') {
-      agent {
-        dockerfile {
-          dir 'jenkins'
-          args '--gpus 1'
-        }
-      }
-      environment {
-        HOME = pwd(tmp:false)
-        OMP_NUM_THREADS = 4
-        PROJECT_NAME = "fens-2026"
-        GITHUB_PATH = "flatironinstitute/ccn-software-fens-2026"
-        GITHUB_TOKEN = credentials("billbrod-github-pr-write")
-        BRANCH_NAME = "${env.BRANCH_NAME}"
-        ISSUE_NUM = "${env.BRANCH_NAME.replace('PR-', '')}"
-      }
-      steps {
-        sh "curl -LsSf https://astral.sh/uv/install.sh | sh"
-        sh '''#!/bin/bash -ex
+properties([
+  disableConcurrentBuilds(abortPrevious: true),
+  buildDiscarder(logRotator(numToKeepStr: '8', daysToKeepStr: '20'))
+])
+
+try {
+  timeout(time: 2, unit: 'HOURS') {
+    buildPod(gpus: 1, context: 'jenkins') {
+      stage('docs') {
+        withEnv([
+          "HOME=$WORKSPACE",
+          "OMP_NUM_THREADS=4",
+          "PROJECT_NAME=fens-2026",
+          "GITHUB_PATH=flatironinstitute/ccn-software-fens-2026",
+          "BRANCH_NAME=${env.BRANCH_NAME}",
+          "ISSUE_NUM=${env.BRANCH_NAME.replace('PR-', '')}"
+        ]) {
+          sh "curl -LsSf https://astral.sh/uv/install.sh | sh"
+          sh '''#!/bin/bash -ex
               # make sure we have the git tags, since we need them to correctly version output
               git fetch --tags
               source $HOME/.local/bin/env
@@ -37,8 +29,7 @@ pipeline {
               # below clobbering it
               mv docs/build/html \$HOME/built-workshops
            '''
-        lock('neurorse-workshops_publish') {
-          script {
+          lock('neurorse-workshops_publish') {
             def scm = scmGit(branches: [[name: 'refs/heads/main']], userRemoteConfigs: [[credentialsId: 'github-jenkins', url: 'https://github.com/flatironinstitute/neurorse-workshops.git']])
             dir(path: 'workshops') {
               checkout(changelog: false, poll: false, scm: scm)
@@ -61,6 +52,7 @@ pipeline {
                 GIT_COMMITTER_EMAIL="jenkins@flatironinstitute.org" GIT_COMMITTER_NAME="Flatiron Jenkins" git commit --author='Flatiron Jenkins <jenkins@flatironinstitute.org>' --allow-empty -m "Generated documentation for \$DOCS_DIR" -m '${env.BUILD_TAG}'
               """
               gitPush(gitScm: scm, targetBranch: 'main', targetRepo: 'origin')
+              withCredentials([string(credentialsId: 'billbrod-github-pr-write', variable: 'GITHUB_TOKEN')]) {
               // this being single quotes is VERY IMPORTANT. otherwise the
               // GITHUB_TOKEN value would be exposed, see
               // https://www.jenkins.io/doc/book/pipeline/jenkinsfile/#interpolation-of-sensitive-environment-variables
@@ -86,39 +78,14 @@ pipeline {
                    fi
                 fi
               '''
+              }
             }
           }
         }
       }
-      post {
-        always {
-          dir("$HOME") {
-            deleteDir()
-          }
-        }
-      }
     }
   }
-  post {
-    failure {
-      emailext subject: '$PROJECT_NAME - Build #$BUILD_NUMBER - $BUILD_STATUS',
-        body: '''$PROJECT_NAME - Build #$BUILD_NUMBER - $BUILD_STATUS
-
-Check console output at $BUILD_URL to view full results.
-
-Building $BRANCH_NAME for $CAUSE
-$JOB_DESCRIPTION
-
-Chages:
-$CHANGES
-
-End of build log:
-${BUILD_LOG,maxLines=200}
-''',
-	      recipientProviders: [
-		    [$class: 'DevelopersRecipientProvider'],
-	    ],
-	      replyTo: '$DEFAULT_REPLYTO'
-    }
-  }
+}
+finally {
+  emailFailure()
 }
