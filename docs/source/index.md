@@ -4,13 +4,13 @@ sd_hide_title: true
 
 # Welcome!
 
-# CCN Software Workshop, Feb 2026
+# CCN Software Workshop @ FENS, July 2026
 
 We are excited to see everyone at the Flatiron Center for Computational Neuroscience workshop on using open source packages to analyze and visualize neural data! You should have received an email with logistical information, including the schedule and link to the slack channel where we will be communicating the workshop. If you did not receive this email, please let us know!
 
 Over the course of this two-day workshop, we will walk you through the notebooks included on this site in order to demonstrate how to use pynapple and NeMoS to analyze and visualize your data.
 
-Before the workshop, please try to follow the [setup](setup) instructions below to install everything on your personal laptop. If you run into issues, first check the [troubleshooting](troubleshooting) section on this page to see if there's a solution for your problem and then, if you are unable to solve the problem, come to our installation help session at the Flatiron Institute, 160 5th Ave, in the 3rd floor conference center, before breakfast on Tuesday, February 3rd, 2026. We'll be there starting at 8:30am!
+Before the workshop, please try to follow the [setup](setup) instructions below to install everything on your personal laptop. If you run into issues, first check the [troubleshooting](troubleshooting) section on this page to see if there's a solution for your problem and then, if you are unable to solve the problem, come to our installation help session in the lobby of the event hotel (Meliá Barcelona Sky, Pere IV 272-286 Barcelona 08005), during the afternoon of Friday, July 2nd, 2026.
 
 We will use [jupyter lab](https://jupyterlab.readthedocs.io/en/latest/) throughout the workshop. If you are unfamiliar with jupyter lab, please check out the ["Intro to Jupyter Lab"](jupyter-lab) page.
 
@@ -33,12 +33,12 @@ We also have completed versions of the group projects notebooks; if you are inte
 (setup)=
 ## Setup
 
-Before the workshop, please try to complete the following steps. If you are unable to do so, we have an installation help session at the Flatiron Institute, 160 5th Ave, in the 3rd floor conference center, before breakfast on Tuesday, February 3rd, 2026. We'll be there starting at 8:30am!
+Before the workshop, please try to complete the following steps. If you are unable to do so, come to our installation help session in the lobby of the event hotel (Meliá Barcelona Sky, Pere IV 272-286 Barcelona 08005), during the afternoon of Friday, July 2nd, 2026.
 
 0. Make sure you have `git` installed. It is installed by default on most Mac and Linux machines, but you may need to install it if you are on Windows. [These instructions](https://git-scm.com/install/) should help.
 1. Clone the github repo for this workshop:
    ```shell
-   git clone https://github.com/flatironinstitute/ccn-software-feb-2026.git
+   git clone https://github.com/flatironinstitute/ccn-software-fens-2026.git
    ```
 
 ### Create a virtual environment with python 3.12
@@ -71,7 +71,7 @@ There are many ways to set up a python virtual environment. You can use your fav
    
 4. Navigate to your cloned repo:
    ```shell
-   cd ccn-software-feb-2026
+   cd ccn-software-fens-2026
    ```
    
 There's no need to create a virtual environment, since `uv` will handle that for you!
@@ -94,7 +94,7 @@ Open up `powershell`, then:
    
 3. Navigate to your cloned repo:
    ```powershell
-   cd ccn-software-feb-2026
+   cd ccn-software-fens-2026
    ```
    
 There's no need to create a virtual environment, since `uv` will handle that for you!
@@ -113,24 +113,17 @@ There's no need to create a virtual environment, since `uv` will handle that for
 ::::::{tab-item} conda / miniforge
 :sync: conda
 
-:::{warning}
-
-Due to [recent changes](https://www.anaconda.com/blog/update-on-anacondas-terms-of-service-for-academia-and-research) to Anaconda's Terms of Service, the Simons Foundation cannot use the `defaults` conda channel and it is blocked on all Flatiron Institute wireless networks. You need to specify `conda-forge` instead (which is community-managed and open to all). The following instructions do so, but if you follow your normal workflow, you may hit issues.
-
-If you have persistent issues with this, try using `uv` instead, which does not have this issue.
-
-:::
 
 1. Install [miniforge](https://github.com/conda-forge/miniforge) if you do not have some version of `conda` or `mamba` installed already.
 2. Open up a terminal and create the new virtual environment by running (**WINDOWS USERS**: use the `Miniforge Prompt` or `Anaconda Prompt` that comes packaged with the miniforge/anaconda/miniconda install):
     ```shell
-    conda create --name ccn-feb26 pip python=3.12
+    conda create --name ccn-fens26 pip python=3.12
     ```
 
 3. Activate your new environment and navigate to the cloned repo: 
     ```shell
-    conda activate ccn-feb26
-    cd ccn-software-feb-2026
+    conda activate ccn-fens26
+    cd ccn-software-fens-2026
     ```
 ::::::
 
@@ -182,7 +175,7 @@ python scripts/check_setup.py
 
 If `check_setup.py` tells you setup was successful, check that you can run `jupyter lab notebooks/live_coding/02_current_injection-users.ipynb` and run the first few cells (up until the one containing `path = workshop_utils.fetch_data("allen_478498617.nwb")`). If that all works, then you're good to go. Otherwise, please come to the installation help session Tuesday morning, so everyone is ready to get started Thursday morning.
 
-After doing the above, the `data/` and `notebooks/` directories within your local copy of the `ccn-software-feb-2026` repository will contain the NWB files and jupyter notebooks for the workshop.
+After doing the above, the `data/` and `notebooks/` directories within your local copy of the `ccn-software-fens-2026` repository will contain the NWB files and jupyter notebooks for the workshop.
 
 On the day of the workshop, we will run through the notebooks in the order they're listed on this website. To open them, navigate to the `notebooks/` directory, activate your virtual environment (if using conda/mamba), and start `jupyter lab`:
 
@@ -193,7 +186,7 @@ On the day of the workshop, we will run through the notebooks in the order they'
 :sync: uv
 
 ```shell
-cd path/to/ccn-software-feb-2026/notebooks
+cd path/to/ccn-software-fens-2026/notebooks
 uv run jupyter lab
 ```
 
@@ -203,8 +196,8 @@ uv run jupyter lab
 :sync: conda
 
 ```shell
-cd path/to/ccn-software-feb-2026/notebooks
-conda activate ccn-feb26
+cd path/to/ccn-software-fens-2026/notebooks
+conda activate ccn-fens26
 jupyter lab
 ```
 
@@ -223,7 +216,7 @@ In older versions of Jupyter Lab, there was an issue within (especially long) no
 
 During the first day, we will demonstrate [pynaviz](https://pynapple-org.github.io/pynaviz/), a new package under development which provides interactive, high-performance visualizations designed to work seamlessly with Pynapple time series and video data. It allows synchronized exploration of neural signals and behavioral recordings.
 
-**This installation section is optional.** If you would like to run pynaviz on your machine, follow the steps outlined here, but if you do not, you will still be able to watch and follow along. As `pynaviz` is under active development, there is a higher chance that you will have installation issues here (especially if you have a Windows machine). If this installation fails and you would like help trying to get it working, come to our installation help session at the Flatiron Institute, 160 5th Ave, in the 3rd floor conference center, before breakfast on Tuesday, February 3rd, 2026. We'll be there starting at 8:30am!
+**This installation section is optional.** If you would like to run pynaviz on your machine, follow the steps outlined here, but if you do not, you will still be able to watch and follow along. As `pynaviz` is under active development, there is a higher chance that you will have installation issues here (especially if you have a Windows machine). If this installation fails and you would like help trying to get it working, come to our installation help session in the lobby of the event hotel (Meliá Barcelona Sky, Pere IV 272-286 Barcelona 08005), during the afternoon of Friday, July 2nd, 2026.
 
 1. Install pynaviz with the pyqt backend:
     ::::::{tab-set}
@@ -233,7 +226,7 @@ During the first day, we will demonstrate [pynaviz](https://pynapple-org.github.
     :sync: uv
     
     ```shell
-    cd path/to/ccn-software-feb-2026
+    cd path/to/ccn-software-fens-2026
     uv pip install "pynaviz[qt]"
     ```
 
@@ -248,8 +241,8 @@ During the first day, we will demonstrate [pynaviz](https://pynapple-org.github.
     :sync: conda
     
     ```shell
-    cd path/to/ccn-software-feb-2026
-    conda activate ccn-feb26
+    cd path/to/ccn-software-fens-2026
+    conda activate ccn-fens26
     pip install "pynaviz[qt]"
     ```
 
@@ -269,7 +262,6 @@ During the first day, we will demonstrate [pynaviz](https://pynapple-org.github.
 (troubleshooting)=
 ## Troubleshooting
 
-- When creating the conda environment, you may get errors related to accessing the `defaults` channel. Due to [recent changes](https://www.anaconda.com/blog/update-on-anacondas-terms-of-service-for-academia-and-research) to Anaconda's Terms of Service, the Simons Foundation cannot use the `defaults` conda channel and it is blocked on all Flatiron Institute wireless networks. You need to specify `conda-forge` instead (which is community-managed and open to all). (The instructions above should do so.)
 - If you are on Mac and get an error related to `ruamel.yaml` (or `clang`) when running `pip install -e .`, we think this can be fixed by updating your Xcode Command Line Tools.
 - On Windows, you may receive an error saying "running scripts is disabled on this system" when trying to activate the virtual environment. If so, run `Set-ExecutionPolicy -Scope CurrentUser` and enter `Unrestricted`, then press `Y`. (You may have to do this every time you open powershell.)
 - If you have multiple jupyter installs on your path (because e.g., because you have an existing jupyter installation in a conda environment and you then used `uv` to setup the virtual environment for this workshop), jupyter can get confused. (You can check if this is the case by running `which -a jupyter` on Mac / Linux.)
@@ -279,7 +271,7 @@ During the first day, we will demonstrate [pynaviz](https://pynapple-org.github.
   JUPYTER_DATA_DIR=$(realpath ..)/.venv/share/jupyter/ jupyter lab
   ```
 
-  (On Windows, replace `$(realpath ..)` with the path to the `ccn-software-feb-2026` directory.)
+  (On Windows, replace `$(realpath ..)` with the path to the `ccn-software-fens-2026` directory.)
 - We have noticed jupyter notebooks behaving a bit odd in Safari --- if you are running/editing jupyter in Safari and the behavior seems off (scrolling not smooth, lag between creation and display of cells), try a different browser. We've had better luck with Firefox or using the arrow keys to navigate between cells.
 - On **Windows + uv**: When running the setup script, if you run into an error like: `ImportError: DLL load failed while importing _jax: The specified module could not be found`, it is possible that there is an issue with how `uv` is solving the environment. Try going through the installation with `miniforge` and `conda` instead.
 - On **Windows + conda**: if after installing conda the path are not correctly set, you may encounter this error message: 
@@ -321,12 +313,12 @@ During the first day, we will demonstrate [pynaviz](https://pynapple-org.github.
 - If you run an import cell in our notebooks and it hangs for a long time, and then you hit "Stop" and the error says something about permission denied, you have a permission issue with your virtual environment. You should either modify the permissions of the folder containing your environment variable (where this folder is and how this should be done depends on which tool you used and your Operating System), or run `jupyter lab` with elevated permissions:
     - On Windows: Open the start menu and right click on "Anaconda Prompt" or "Powershell" (whichever you use) and click "Run as Administrator". You may also need to open the browser as administrator.
     - On Mac/Linux: run `sudo jupyter lab` instead of `jupyter lab`.
-- If you cannot see the images in the notebooks (e.g., at the top of `02_current_injections-users`), run `jupyter lab` or `uv run jupyter lab` with no arguments from the root directory of the project (i.e., in the `ccn-software-feb-2026` directory, not `notebooks`).
-- If you get import errors in the jupyter notebook, you are likely using a different `jupyter` than the one installed in this directory. If you used `uv` to install the environment, you need to run `uv run jupyter lab` from the root directory of the project (i.e., in the `ccn-software-feb-2026` directory). If you used `conda`, make sure the environment is activated, and then run `jupyter lab`.
+- If you cannot see the images in the notebooks (e.g., at the top of `02_current_injections-users`), run `jupyter lab` or `uv run jupyter lab` with no arguments from the root directory of the project (i.e., in the `ccn-software-fens-2026` directory, not `notebooks`).
+- If you get import errors in the jupyter notebook, you are likely using a different `jupyter` than the one installed in this directory. If you used `uv` to install the environment, you need to run `uv run jupyter lab` from the root directory of the project (i.e., in the `ccn-software-fens-2026` directory). If you used `conda`, make sure the environment is activated, and then run `jupyter lab`.
 
 ## Binder
 
-A binder instance (a virtual environment running on Flatiron's cluster) is provided in case we cannot get your installation working. To access it, click the "launch binder" button in the top left of this site or click [here](https://binder.flatironinstitute.org/v2/user/wbroderick/feb2026?labpath=notebooks).
+A binder instance (a virtual environment running on Flatiron's cluster) is provided in case we cannot get your installation working. To access it, click the "launch binder" button in the top left of this site or click [here](https://binder.flatironinstitute.org/v2/user/wbroderick/fens2026?labpath=notebooks).
 
 You must login with the email address you provided when registering for the workshop. If you get a `403 Forbidden` error or would like to use a different email, send Billy Broderick a message on the workshop slack.
 

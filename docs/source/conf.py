@@ -9,7 +9,7 @@
 import os
 import glob
 import pathlib
-project = 'CCN software workshop, Feb 2026'
+project = 'CCN software workshop, FENS 2026'
 copyright = '2025, Edoardo Balzani, Billy Broderick, Sarah Jo Venditto, Guillaume Viejo'
 author = 'Edoardo Balzani, Billy Broderick, Sarah Jo Venditto, Guillaume Viejo'
 
@@ -44,8 +44,8 @@ html_sourcelink_suffix = ""
 myst_enable_extensions = ["colon_fence", "dollarmath", "attrs_inline"]
 html_theme_options = {
     "home_page_in_toc": True,
-    "github_url": "https://github.com/flatironinstitute/ccn-software-feb-2026",
-    "repository_url": "https://github.com/flatironinstitute/ccn-software-feb-2026",
+    "github_url": "https://github.com/flatironinstitute/ccn-software-fens-2026",
+    "repository_url": "https://github.com/flatironinstitute/ccn-software-fens-2026",
     "logo": {
         "alt_text": "Home",
         "image_light": "_static/01-FI-primary-logo-color.png",
@@ -62,7 +62,7 @@ html_theme_options = {
         },
         {
             "name": "Binder",
-            "url": "https://binder.flatironinstitute.org/v2/user/wbroderick/feb2026?labpath=notebooks/",
+            "url": "https://binder.flatironinstitute.org/v2/user/wbroderick/fens2026?labpath=notebooks/",
             "type": "url",
             "icon": "https://mybinder.org/badge_logo.svg",
         },

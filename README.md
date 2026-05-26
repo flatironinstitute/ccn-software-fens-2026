@@ -1,6 +1,6 @@
-# CCN Software Workshop at Flatiron, Feb 2026
+# CCN Software Workshop at FENS, June 2026
 
-Materials for CCN software workshop at the Flatiron Institute, February 2026.
+Materials for CCN software software at the FENS Forum, June 2026.
 
 We have a slack channel for communicating with attendees, if you haven't received an invitation, please send us a note!
 
@@ -52,4 +52,4 @@ For internal cross-references (i.e., those that refer to other notebooks in this
 
 See [nemos Feb 2024 workshop](https://github.com/flatironinstitute/nemos-workshop-feb-2024) for details on how to set up the Binder
 
-For TAs / instructors: [group project link](https://flatironinstitute.github.io/neurorse-workshops/workshops/feb-2026/branch/main/full/group_projects/)
+For TAs / instructors: [group project link](https://flatironinstitute.github.io/neurorse-workshops/workshops/fens-2026/branch/main/full/group_projects/)

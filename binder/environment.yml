@@ -1,4 +1,4 @@
-name: feb2026
+name: fens2026
 channels:
   - conda-forge
   - nvidia
