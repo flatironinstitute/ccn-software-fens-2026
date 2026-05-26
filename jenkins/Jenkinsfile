@@ -16,8 +16,8 @@ pipeline {
       environment {
         HOME = pwd(tmp:false)
         OMP_NUM_THREADS = 4
-        PROJECT_NAME = "feb-2026"
-        GITHUB_PATH = "flatironinstitute/ccn-software-feb-2026"
+        PROJECT_NAME = "fens-2026"
+        GITHUB_PATH = "flatironinstitute/ccn-software-fens-2026"
         GITHUB_TOKEN = credentials("billbrod-github-pr-write")
         BRANCH_NAME = "${env.BRANCH_NAME}"
         ISSUE_NUM = "${env.BRANCH_NAME.replace('PR-', '')}"
