@@ -1,0 +1,12 @@
+#!/bin/bash
+
+CONDA_OVERRIDE_CUDA="12.3" conda env update -p $NB_PYTHON_PREFIX --file environment-cuda.yml
+conda activate feb2026
+conda clean --all -y
+# because of symlinks and being in the container, this is where the Binder
+# instance thinks the data should go.
+mkdir -p notebooks
+NEMOS_DATA_DIR=/home/jovyan/data python ccn-software-feb-2026/scripts/setup.py
+cp -r ccn-software-feb-2026/notebooks/group_projects/ ./notebooks/
+cp -r ccn-software-feb-2026/notebooks/live_coding/ ./notebooks/
+sed -i 's|../../docs/source/_static/|../../ccn-software-feb-2026/docs/source/_static/|g' notebooks/*/*ipynb

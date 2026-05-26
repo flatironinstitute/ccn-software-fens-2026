@@ -1,0 +1,8 @@
+name: feb2026
+channels:
+  - conda-forge
+  - nvidia
+dependencies:
+  - python=3.12
+  - pip
+  - cuda-nvcc>=12

@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ccn_software_feb_2026"
+version = "0.1.0"
+authors = [
+    {name = "Edoardo Balzani", email = "ebalzani@flatironinstitute.org"},
+    {name = "William Broderick", email = "wbroderick@flatironinstitute.org"},
+    {name = "Guillaume Vejo", email = "gviejo@flatironinstitute.org"},
+    {name = "Sarah Jo Venditto", email = "svenditto@flatironinstitute.org"}
+]
+description = "Utilities for Feb 2026 CCN software workshop"
+readme = "README.md"
+requires-python = ">=3.11"
+keywords = ["neuroscience", "Poisson-GLM"]
+license = { file = "LICENSE" }
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13"
+]
+
+# Define dependencies for the project
+dependencies = [
+    'myst-nb',
+    'myst-parser',
+    'sphinx',
+    'sphinx-book-theme',
+    'sphinx-copybutton',
+    'sphinx-togglebutton',
+    'sphinx-design',
+    'sphinx-autobuild',
+    'ipywidgets',
+    'requests',
+    'jupytext',
+    'jupyterlab_myst>=2.6',
+    'jupyter',
+    "jupyterlab>=4.5",
+    'pillow',
+    'nemos>=0.2.6',
+    'pynapple',
+    'click',
+    'ipython',
+    "scikit-learn",
+    "dandi",
+    "matplotlib>=3.7",
+    "seaborn",
+    "pooch",
+    "fsspec",
+]
+
+# Configure package discovery for setuptools
+[tool.setuptools.packages.find]
+where = ["src"]             # The directory where package modules are located
+include = ["workshop_utils"] # The specific package(s) to include in the distribution

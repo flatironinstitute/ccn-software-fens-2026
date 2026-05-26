@@ -1,0 +1,10 @@
+name: feb2026
+channels:
+  - conda-forge
+  - nvidia
+dependencies:
+  - ffmpeg
+  - jax
+  - jaxlib=*=*cuda*
+  - pip:
+      - git+https://github.com/flatironinstitute/ccn-software-feb-2026.git
