@@ -1,4 +1,5 @@
 #!/bin/bash
+set -xuo pipefail
 
 CONDA_OVERRIDE_CUDA="12.3" conda env update -p $NB_PYTHON_PREFIX --file environment-cuda.yml
 conda activate fens2026
