@@ -51,6 +51,10 @@ dependencies = [
     "matplotlib>=3.7",
     "seaborn",
     "pooch",
+    # as of May 27, 2026, jax hasn't released later than this on conda-forge. if
+    # pip tries to install a more recent version than conda did, it raises an
+    # error because pip doesn't know how to uninstall the one that conda
+    # installed.
     "jax==0.9.2",
     "fsspec",
 ]
