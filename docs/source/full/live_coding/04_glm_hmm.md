@@ -18,11 +18,56 @@ kernelspec:
 import jax
 import numpy as np
 import seaborn as sns
+import matplotlib.pyplot as plt
 
 jax.config.update("jax_enable_x64", True)
 np.random.seed(65)
 custom_params = {"axes.spines.right": False, "axes.spines.top": False}
 sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params)#, context="notebook")
+
+def plot_glm_weights(model, n_states=3):
+    fig = plt.figure(figsize=(6, 5))
+    colors = ["#ff7f00",  "#4daf4a","#377eb8"]
+
+    n_features = model.coef_.shape[0]+1 # add 1 for the intercept
+
+    # Change order of weights so output matches Ashwood et al. (2022) 2e plot
+    recovered_weights = np.zeros((n_features,n_states)) 
+    recovered_weights[0,:] = model.coef_[0,:] # stimulus
+    recovered_weights[1,:] = model.intercept_ # bias
+    recovered_weights[2,:] = model.coef_[2,:] # prev choice, wsls
+    recovered_weights[3,:] = model.coef_[1,:] # prev choice, wsls
+
+    # Labels
+    X_labels = ["Stimulus", "Bias", "Prev.choice", "WSLS"]
+
+    state_labels = [
+        'State 1: "engaged"',
+        'State 2: "biased left"',
+        'State 3: "biased right"'
+    ]
+
+    for state in range(n_states):
+        plt.plot(
+            range(n_features),
+            recovered_weights[:, state],
+            color=colors[state],
+            marker="o",
+            lw=1.5,
+            label=state_labels[state],
+            linestyle="-",
+        )
+            
+    plt.yticks([-2.5, 0, 2.5, 5])
+    plt.ylabel("GLM weight")
+    plt.xlabel("Covariate")
+    plt.xticks([i for i in range(n_features)], X_labels, fontsize=12, rotation=45)
+    plt.axhline(y=0, color="k", alpha=0.5, ls="--")
+
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+    
 ```
 
 :::{admonition} Download
@@ -56,13 +101,15 @@ Data for this notebook comes from the IBL decision-making task  (IBL et al., 202
 </div>
 
 
-```{figure} ../../_static/IBL_edited.png
-:tags: [render-all]
-:scale: 120%
-:alt: Task illustration
-:align: center
-Task illustration. Modified from IBL et al. (2021) <span id="cite2b"></span><a href="#ref2b">[2b]</a>.
-```
+<div class="render-all">
+
+
+![Task illustration](../../_static/IBL_edited.png)
+
+*Task illustration. Modified from IBL et al. (2021)* <span id="cite2b"></span><a href="#ref2b">[2b]</a>.
+
+
+</div>
 
 <div class="render-all">
 Each stimulus is presented either to the left or to the right, with a probability that varies over time.
@@ -70,11 +117,18 @@ Each stimulus is presented either to the left or to the right, with a probabilit
 </div>
 
 
-```{figure} ../../_static/prob_left.svg
-:alt: Probability Left Stimulus
-:align: center
-Probability of left stimulus presentation over trials.
-```
+<div class="render-all">
+
+
+
+![Probability Left Stimulus](../../_static/prob_left.svg)
+
+*Probability of left stimulus presentation over trials.*
+
+
+</div>
+
+
 
 ## Data Streaming
 
@@ -121,14 +175,40 @@ We only need a subset of those columns, in particular we will work with:
 
 <div class="render-all">
 
-| Variable            | Description |
-|---------------------|-------------|
-| choice              | mouse choice: 1 = choice left, -1 = choice right, 0 = violation (no response within the trial period). Since we are going to use a Bernoulli GLM, we will remap the variables to 1 = choice left and 0 = choice right at the end of preprocessing. |
-| contrastLeft        | contrast of stimulus presented on the left |
-| contrastRight       | contrast of stimulus presented on the right |
-| feedbackType        | reward obtained: 1 = success, -1 = failure |
-| probabilityLeft     | probability of stimulus being presented on the left of the screen |
-| session             | id of session |
+<table style="border-collapse: collapse; width: 100%; font-size: 0.95em;">
+  <thead>
+    <tr style="background-color: #2c3e50; color: #ffffff;">
+      <th style="padding: 8px 12px; text-align: left; border: 1px solid #ccc; white-space: nowrap; width: 180px;">Variable</th>
+      <th style="padding: 8px 12px; text-align: left; border: 1px solid #ccc;">Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr style="background-color: #f6f8fa;">
+      <td style="padding: 8px 12px; border: 1px solid #ccc; font-family: monospace; font-weight: bold; color: #2c3e50; text-align: left; white-space: nowrap; width: 180px;">choice</td>
+      <td style="padding: 8px 12px; border: 1px solid #ccc; text-align: left;">mouse choice: 1 = choice left, -1 = choice right, 0 = violation (no response within the trial period). Since we are going to use a Bernoulli GLM, we will remap the variables to 1 = choice left and 0 = choice right at the end of preprocessing.</td>
+    </tr>
+    <tr style="background-color: #ffffff;">
+      <td style="padding: 8px 12px; border: 1px solid #ccc; font-family: monospace; font-weight: bold; color: #2c3e50; text-align: left; white-space: nowrap; width: 180px;">contrastLeft</td>
+      <td style="padding: 8px 12px; border: 1px solid #ccc; text-align: left;">contrast of stimulus presented on the left</td>
+    </tr>
+    <tr style="background-color: #f6f8fa;">
+      <td style="padding: 8px 12px; border: 1px solid #ccc; font-family: monospace; font-weight: bold; color: #2c3e50; text-align: left; white-space: nowrap; width: 180px;">contrastRight</td>
+      <td style="padding: 8px 12px; border: 1px solid #ccc; text-align: left;">contrast of stimulus presented on the right</td>
+    </tr>
+    <tr style="background-color: #ffffff;">
+      <td style="padding: 8px 12px; border: 1px solid #ccc; font-family: monospace; font-weight: bold; color: #2c3e50; text-align: left; white-space: nowrap; width: 180px;">feedbackType</td>
+      <td style="padding: 8px 12px; border: 1px solid #ccc; text-align: left;">reward obtained: 1 = success, -1 = failure</td>
+    </tr>
+    <tr style="background-color: #f6f8fa;">
+      <td style="padding: 8px 12px; border: 1px solid #ccc; font-family: monospace; font-weight: bold; color: #2c3e50; text-align: left; white-space: nowrap; width: 180px;">probabilityLeft</td>
+      <td style="padding: 8px 12px; border: 1px solid #ccc; text-align: left;">probability of stimulus being presented on the left of the screen</td>
+    </tr>
+    <tr style="background-color: #ffffff;">
+      <td style="padding: 8px 12px; border: 1px solid #ccc; font-family: monospace; font-weight: bold; color: #2c3e50; text-align: left; white-space: nowrap; width: 180px;">session</td>
+      <td style="padding: 8px 12px; border: 1px solid #ccc; text-align: left;">id of session</td>
+    </tr>
+  </tbody>
+</table>
 
 
 Let's extract what we need,
@@ -248,30 +328,27 @@ print(f"# of sessions after restrictions {df_trials['session'].nunique()}")
 Now, with the valid sessions, we can compute the design matrix. In our case, we are interested in building a design matrix with three predictors: signed contrast, previous choice and win stay lose shift.
 </div>
 
-(design-matrix-table)=
-```{figure} ../../_static/design_matrix_table.png
-:tags: render-all
-:alt: Design matrix
-:align: right
 
-```
+<div class="render-all">
+
+
+![Design matrix](../../_static/design_matrix_table.png)
+
+
+</div>
 
 The first predictor, signed contrast, encodes sensory evidence in 1D. Within this predictor, magnitude reflects strength of evidence and sign encodes direction. The second predictor, previous choice, is a lagged version of current choice, and it reflects serial dependence on decisions. The third predictor, win-stay lose-shift, reflects the interaction between past choice and outcome. If an animal made a decision and it was rewarded in a previous trial, then the predictor indicates to "stay". That is, to repeat that choice. Conversely, if the previous choice was not rewarded, then the predictor indicates to "switch" to the other alternative.
 
-Let's go through the process of building the design matrix with one session.
+Let's go through the process of building the design matrix.
 
 <div class="render-presenter, render-user">
 
-- Select the frist valid session from the dataframe `df_trials`.
 - Extract the columns we need for the design: `choice`, `contrastLeft`, `contrastRight` and `feedbackType` (reward). 
 
 </div>
 
 <div class="render-user">
 ```{code-cell} ipython3
-# Select an example session
-example_session_id = valid_sessions[0]  
-df_example_session = 
 # Select the necessary columns (and reset_index + drop): 
 # choice, contrast of stimuli and reward
 choices = 
@@ -282,16 +359,14 @@ rewarded =
 </div>
 
 ```{code-cell} ipython3
-# Select an example session
-example_session_id = valid_sessions[0]  
-df_example_session = df_trials[df_trials["session"] == example_session_id]
 
 # We can select all the necessary values for the design matrix: 
 # choice, contrast of stimuli and reward
-choices = df_example_session['choice'].reset_index(drop=True)
-stim_left = df_example_session['contrastLeft'].reset_index(drop=True)
-stim_right = df_example_session['contrastRight'].reset_index(drop=True)
-rewarded = df_example_session['feedbackType'].reset_index(drop=True)
+choices = df_trials['choice'].reset_index(drop=True)
+stim_left = df_trials['contrastLeft'].reset_index(drop=True)
+stim_right = df_trials['contrastRight'].reset_index(drop=True)
+rewarded = df_trials['feedbackType'].reset_index(drop=True)
+session = df_trials['session'].reset_index(drop=True).to_numpy()
 ```
 
 For the first predictor: signed contrast.
@@ -321,7 +396,10 @@ stim_right = np.nan_to_num(stim_right, nan=0)
 
 # Compute the signed contrast
 signed_contrast = stim_left - stim_right
-print(signed_contrast)
+
+# print the design for the first valid session
+select_session = df_trials["session"] == valid_sessions[0]
+signed_contrast[select_session]
 ```
 
 <div class="render-presenter, render-user">
@@ -394,25 +472,26 @@ However, we are still missing one predictor: win-stay lose-shift. This is an int
 
 <div class="render-user, render-presenter">
 
-- Win-stay lose-shift is the product of previous choice and current reward, [see table above](design-matrix-table).
+
+- Win-stay lose-shift is the product of previous choice and previous reward, $WSLS_t = c_{t-1} \cdot r_{t-1}$.
 - We can use [basis multiplication](https://nemos.readthedocs.io/en/latest/background/basis/plot_02_ND_basis_function.html#n-dimensional-basis) to construct that predictor. 
 
 </div>
 
 <div class="render-user, render-presenter">
 ```{code-cell} ipython3
-# Create lagged reward predictor
+# Create lagged reward basis
 prev_reward_basis = 
-# Multiply with reward basis to get the win-stay lose shift basis
+# Multiply lagged reward basis with the lagged choice basis
 wsls_basis = 
 ```
 </div>
 
 ```{code-cell} ipython3
-# Create lagged reward predictor
+# Create lagged reward basis
 prev_reward_basis = nmo.basis.HistoryConv(1)
 
-# Create multiplicative basis object
+# Multiply lagged reward basis with the lagged choice basis
 wsls_basis = prev_choice_basis*prev_reward_basis
 ```
 
@@ -423,8 +502,27 @@ Even though we need just a few lines of code, there is a lot going on. Here's a 
 2. ```wsls_basis``` is a multiplicative basis that takes two inputs.
 3. We will compute the features for our ```basis_object``` using ```compute_features```. Since the bases in our composite basis take a total of 4 inputs (```stimuli_basis``` takes 1 input, ```wsls_basis``` takes 2 inputs and ```prev_choice_basis``` takes 1 input), we need to pass 4 features to ```compute_features```.
 
+
+<div class="render-user, render-presenter">
+
+
+- Use [basis addition](https://nemos.readthedocs.io/en/latest/background/basis/plot_02_ND_basis_function.html#additive-basis-object) to define a basis which concatenates predictor.
+- Create the design matrix by calling `compute_features`. Select the valid trials by applying the `valid_choices_idx` boolean mask.
+
+</div>
+
+<div class="render-presenter, render-user">
 ```{code-cell} ipython3
-# Create a composite basis using our three basis
+# Create an additive basis using our three components
+basis_object =
+# Call compute features to get the raw model design
+X_unnormalized = 
+X_unnormalized[:5,:]
+```
+</div>
+
+```{code-cell} ipython3
+# Create an additive basis using our three components
 basis_object = (
     stimuli_basis +                         # will process one input
     wsls_basis +                            # will process two inputs (choice & reward)
@@ -439,24 +537,41 @@ X_unnormalized = basis_object.compute_features(
     choices[valid_choices_idx]              # input 4 : processed with prev_choice
 )        
 
-print(X_unnormalized[:5,:])     
+X_unnormalized[:5,:]
 ```
 
 And that's it! We have our unnormalized design matrix with signed contrast, win-stay lose-shift and previous choice as predictors.
 
 As as last step, we now need to normalize our signed contrast predictor.
 
+<div class="render-presenter, render-user">
+- Z-score the contrast values.
+</div>
+
+<div class="render-user, render-presenter">
+```{code-cell} ipython3
+from scipy.stats import zscore
+# Copy the array (we'll need the un-normalized later)
+X = np.copy(X_unnormalized)
+# Apply z-scoring
+X[:, 0] = 
+```
+</div>
+
 ```{code-cell} ipython3
 from scipy.stats import zscore
 
-# Normalize across the signed contrast
+# Copy the array (we'll need the un-normalized later)
 X = np.copy(X_unnormalized)
+
+# Apply z-scoring
 X[:, 0] = zscore(X[:, 0])
 ```
 
-```{admonition} "Why do we normalize our stimuli predictor?" 
-:class: question
+:::{admonition} Why do we normalize our stimuli predictor?
+:class: question render-all
 :class: dropdown
+
 When fitting a GLM-HMM, we are fitting a separate weight for each feature. However, if the features are on different numerical scales for reasons that are not related to the actual influence of each predictor, that renders the weights incomparable. Here we have three predictors:  
 - (1) Previous choice and (2) WSLS are always exactly −1 or +1. Their values are discrete and bounded, and they already share the same scale.
 - (3) Stimuli contrast is continuous. While it can reach −1 or +1 (full contrast), this value rarely occurs. 
@@ -464,7 +579,7 @@ When fitting a GLM-HMM, we are fitting a separate weight for each feature. Howev
 Because the stimuli contrast values are much smaller in typical magnitude than +/-1, the model compensates by assigning a larger weight to match the output scale, simply because its values are numerically smaller. In practice, this results in an artifact of scale that is not reflective of the  true influence of the predictor.
 
 By normalizing, we are rescaling the predictor to have mean 0 and standard deviation of 1. Previous choice and WSLS already on a unit scale by construction — their values are symmetric around zero and their spread is naturally 1. This is why we only normalize signed contrast.
-```
+:::
 
 +++
 
@@ -530,59 +645,26 @@ def plot_design_matrix():
 ```{code-cell} ipython3
 :tags: [render-all]
  
-# This function is defined in the hidden codeblock above
-# and it is just a utility for making a pretty heatmap plot
+# Plot an heatmap showing the mdoel design
 plot_design_matrix()
 ```
 
-Similarly, we can do this process for all the sessions
+## Model fitting
+
+We are going to fit a Bernoulli GLM-MHM to model binary choices. For this reason, we must convert choices from the original $\{-1, 1\}$ encoding, to $\{0, 1\}$.
+
+<div class="render-presenter, render-user">
+- To a Bernoulli GLM-HMM we need observations to take a values of 0 or 1.
+- Convert choices to 0s and 1s. 1: Left and 0: Right. You can use `np.where`.
+</div>
+
+<div class="render-user, render-presenter">
+```{code-cell} ipython3
+choices = 
+```
+</div>
 
 ```{code-cell} ipython3
-# Subset all relevant data
-stim_left = df_trials['contrastLeft'].reset_index(drop=True)
-stim_right = df_trials['contrastRight'].reset_index(drop=True)
-rewarded = df_trials['feedbackType'].reset_index(drop=True)
-choices = df_trials['choice'].reset_index(drop=True).to_numpy()
-session = df_trials['session'].reset_index(drop=True).to_numpy()
-
-# Select valid choices
-valid_choices_idx = np.where(~(choices == viol_val))[0]
-
-# Create stim vector
-stim_left = np.nan_to_num(stim_left, nan=0)
-stim_right = np.nan_to_num(stim_right, nan=0)
-
-# now get 1D stim
-signed_contrast = stim_left - stim_right
-print(signed_contrast)
-
-# Create basis objects
-prev_choice_basis = nmo.basis.HistoryConv(1)
-prev_reward_basis = nmo.basis.HistoryConv(1)
-stimuli_basis = nmo.basis.IdentityEval()
-
-wsls = prev_choice_basis*prev_reward_basis
-
-# Create a composite basis using our three basis
-basis_object = (
-    stimuli_basis +                         # will process one input
-    wsls_basis +                            # will process two inputs (choice & reward)
-    prev_choice_basis                       # will process one input
-)
-
-# Compute features
-X_unnormalized = basis_object.compute_features(
-    signed_contrast[valid_choices_idx],     # input 1 : processed with stimuli_basis
-    choices[valid_choices_idx],             # input 2 : wsls input 1: choice
-    rewarded[valid_choices_idx],            # input 3 : wsls input 2: reward
-    choices[valid_choices_idx]              # input 4 : processed with prev_choice
-)   
-
-# And then normalize across the signed contrast
-X = np.copy(X_unnormalized)
-X[:, 0] = zscore(X[:, 0])
-
-# For fitting a Bernoulli, our variables need to be in 0-1 space. So we will remap them so 1: Left and 0: Right
 choices = np.where(choices == -1, 0, choices)
 ```
 
@@ -594,54 +676,69 @@ In NeMoS we have two ways of indicating the beginning of a new session. You can 
 - an integer array of indices marking session starts, shape ``(n_sessions,)``
 - a pynapple.IntervalSet marking session epochs (requires either X or y to be a pynapple Tsd or TsdFrame to get timestamps)
 
+<div class="render-presenter, render-user">
+- Create a vector containing the indices of each session start.
+</div>
+
+<div class="render-presenter, render-user">
 ```{code-cell} ipython3
 # Mark where session changes
-new_sess_mouse = np.ones(len(session), dtype=int)
-new_sess_mouse[1:] = (session[1:] != session[:-1])
+new_sess_mouse = 
+```
+</div>
+
+```{code-cell} ipython3
+# Mark where session changes
+new_sess_mouse = np.flatnonzero(session[1:] != session[:-1]) + 1
 ```
 
-## Model fitting
-We will use a Bernoulli GLM to model this mouse's choices. For this, we first need to initialize the ```GLMHMM``` object. The only required parameter is the number of states. Ashwood et al. (2022) <span id="cite1d"></span><a href="#ref1d">[1d]</a> found that most mice used 3 decision-making states when performing this task. Following that work, we will initialize our ```GLMHMM``` object with 3 states.
+Let's initialize the ```GLMHMM``` object. The only required parameter is the number of states. Ashwood et al. (2022) <span id="cite1d"></span><a href="#ref1d">[1d]</a> found that most mice used 3 decision-making states when performing this task. Following that work, we will initialize our ```GLMHMM``` object with 3 states.
 
 ```{admonition} GLM-HMM observation models
 :class: note
 
 The default observation model for the GLM-HMM is Bernoulli, but Categorical (Multinomial), Poisson, Gamma, Negative Binomial and Gaussian observation models are also available. If you want, you can also set a different observation model of your choice and personalize the inverse link function. However, bear in mind that convexity is not guaranteed for all likelihood functions.
-
-For more information, refer to Escola et al (2011)<span id="cite4"></span><a href="#ref4">[4]</a> and also to [our notebook on GLM-HMM theoretical underpinnings - PENDING]().
 ```
-____
 
-[PENDING - do not edit because it might change]()
-If required, you can further personalize the ```GLMHMM``` object settings. Beyond the number of states, the observation model and the inverse link function, you can also initialization functions for to aid parameter estimation. 
+<div class="render-presenter, render-user">
+- Initialize the `GLMHMM` object with 3 states and `regularizer="Ridge"`.
+</div>
 
-If you don't set up any initialization settings, you would use the NeMoS defaults:
-- ``"glm_params_init"``: ``"random"`` - small random coefficients, mean-rate intercept
-- ``"scale_init"``: ``"constant"`` - scale initialized to 1.0
-- ``"initial_proba_init"``: ``"uniform"`` - equal probability for all states
-- ``"transition_proba_init"``: ``"sticky"`` - high self-transition probability (0.95)
+
+<div class="render-presenter, render-user">
+```{code-cell} ipython3
+n_states = 3
+model = nmo.glm_hmm.GLMHMM(
+model
+```
+</div>
 
 ```{code-cell} ipython3
 n_states = 3
 
 model = nmo.glm_hmm.GLMHMM(
     n_states,
-    regularizer = "Ridge")
+    regularizer="Ridge",
+)
 
-print(model)
+model
 ```
 
-```{admonition} "Importance of initial parameters in GLM-HMMs"
-:class: question
+:::{admonition} Importance of initial parameters in GLM-HMMs
+:class: question render-all
 :class: dropdown
 When fitting a GLM-HMMs, the likelihood surface is non-convex, and EM-based fitting can converge to different local optima depending on starting values. As a result, different initializations can lead to qualitatively different parameters. In practice, this makes it necessary to either run multiple random restarts or use informed initializations derived from simpler models (e.g. logistic regression or clustering of behavior).
 
-For a more detailed example of how initialization affects convergence and interpretation, refer to [our notebook on GLM-HMM theoretical underpinnings - PENDING]()
-```
-
-+++
+:::
 
 Once we created our object, we can fit our model. The fit function takes two mandatory arguments: the design matrix ```X```we created in section 02 and the ```choices```. Additionally, we will also include ```new_sess_mouse```, the new session indicator.
+
+
+<div class="render-presenter, render-user">
+
+- Fit the model providing the `new_sess_mouse` markers as the `session_starts` argument of `model.fit`.
+
+</div>
 
 ```{code-cell} ipython3
 model.fit(
@@ -651,18 +748,21 @@ model.fit(
 )
 ```
 
-Thats all it takes!
+That's all it takes!
 
-+++
 
 ## Results interpretation
 
-+++
+### How to visualize the fitted parameters
 
-### How to see the fitted parameters
+<div class="render-presenter, render-user">
+
+Latent state labels are arbitrary. Below we permute those labels to match that of the reference paper.
+
+</div>
 
 ```{code-cell} ipython3
-:tags: [hide-input]
+:tags: [hide-input, render-all]
 
 permutation = jnp.array([1, 2, 0])
 model.coef_ = model.coef_[:, permutation]
@@ -670,86 +770,45 @@ model.intercept_ = model.intercept_[permutation]
 model.transition_prob_ = model.transition_prob_[permutation][:, permutation]
 ```
 
-If we want to see our glm-hmm weights, we can call ```model.coef_```. This will output the coefficients of the glm per state, with shape (n_features, n_states).
+<div class="render-all">
+
+The GLM coefficients and intercept, and the HMM initial and transition probabilities are stored in the following attributes:
+
+- `model.coef_`
+- `model.intercept_`
+- `model.initial_prob_`
+- `model.transition_prob_`
+
+Let's print them
+</div>
+
+
 
 ```{code-cell} ipython3
-print(f"glm weights shape \n {model.coef_.shape} \n")
-print(f"glm weights \n {model.coef_}")
-```
+:tags: [render-all]
 
-Similarly, to see the intercept, we can call ```model.intercept_```, which will output the intercept per state. The shape of this object is (n_states)
+print("GLM parameters\n==============")
+print(f"glm weights:\n{model.coef_}\n")
+print(f"intercept:\n{model.intercept_}")
 
-```{code-cell} ipython3
-print(f"intercept shape \n {model.intercept_.shape} \n")
-print(f"intercept \n {model.intercept_}")
-```
-
-We can also see the estimated transition matrix with ```model.transition_prob``` and the initial probatilities with ```model.initial_prob```, with shapes (n_states, n_states) and (n_states,), respectively.
-
-```{code-cell} ipython3
-print(f"transition matrix shape \n {model.transition_prob_.shape}")
-print(f"transition matrix \n {model.transition_prob_}")
-
-print(f"initial probabilities shape \n {model.initial_prob_.shape}")
+print("\n\nHMM parameters\n==============")
+print(f"transition matrix \n {model.transition_prob_}\n")
 print(f"initial probabilities \n {model.initial_prob_}")
 ```
 
+<div class="render-all">
 Let's see what type of information we can gather.
-
-+++
+</div>
 
 ### Interpreting the GLM weights
+
+<div class="render-all">
 We can plot the GLM weights obtained for our 3-state model.
+</div>
 
 ```{code-cell} ipython3
-:tags: [remove_input]
+:tags: [render-all]
 
-def plot_glm_weights(model, n_states = n_states):
-    fig = plt.figure(figsize=(6, 5))
-    colors = ["#ff7f00",  "#4daf4a","#377eb8"]
-
-    n_features = model.coef_.shape[0]+1 # add 1 for the intercept
-
-    # Change order of weights so output matches Ashwood et al. (2022) 2e plot
-    recovered_weights = np.zeros((n_features,n_states)) 
-    recovered_weights[0,:] = model.coef_[0,:] # stimulus
-    recovered_weights[1,:] = model.intercept_ # bias
-    recovered_weights[2,:] = model.coef_[2,:] # prev choice, wsls
-    recovered_weights[3,:] = model.coef_[1,:] # prev choice, wsls
-
-    # Labels
-    X_labels = ["Stimulus", "Bias", "Prev.choice", "WSLS"]
-
-    state_labels = [
-        'State 1: "engaged"',
-        'State 2: "biased left"',
-        'State 3: "biased right"'
-    ]
-
-    for state in range(n_states):
-        plt.plot(
-            range(n_features),
-            recovered_weights[:, state],
-            color=colors[state],
-            marker="o",
-            lw=1.5,
-            label=state_labels[state],
-            linestyle="-",
-        )
-            
-    plt.yticks([-2.5, 0, 2.5, 5])
-    plt.ylabel("GLM weight")
-    plt.xlabel("Covariate")
-    plt.xticks([i for i in range(n_features)], X_labels, fontsize=12, rotation=45)
-    plt.axhline(y=0, color="k", alpha=0.5, ls="--")
-
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
-    
-```
-
-```{code-cell} ipython3
 plot_glm_weights(model)
 ```
 
