@@ -1,4 +1,4 @@
-name: build
+name: check_jax_version
 on:
   workflow_dispatch:
   schedule:
@@ -16,6 +16,8 @@ jobs:
       with:
         persist-credentials: false
     - uses: prefix-dev/setup-pixi@5185adfbffb4bd703da3010310260805d89ebb11 # v0.9.6
+      with:
+        run-install: false
     - run: |
         condaforge_version=$(pixi search jaxlib -c conda-forge --json | jq '."linux-64"[0].version')
         echo $condaforge_version
