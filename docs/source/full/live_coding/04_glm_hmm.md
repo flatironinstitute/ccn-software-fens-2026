@@ -917,6 +917,16 @@ And then we can use our output of ```decode_state``` to segment the trials into 
 
 </div>
 
+<div class="render-presenter, render-user">
+```{code-cell} ipython3
+accuracy_per_state = np.zeros(n_states)
+for s in range(n_states):
+  in_state =
+  accuracy_per_state[s] =
+accuracies_to_plot_viterbi[1:] = accuracy_per_state
+```
+</div>
+
 ```{code-cell} ipython3
 accuracy_per_state = np.zeros(n_states)
 for s in range(n_states):
@@ -924,7 +934,7 @@ for s in range(n_states):
   accuracy_per_state[s] = correct_choices[in_state].mean()
 
 accuracies_to_plot_viterbi[1:] = accuracy_per_state
- ```
+```
 
 And we can plot this :)
 
