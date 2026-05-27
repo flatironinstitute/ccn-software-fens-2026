@@ -48,14 +48,14 @@ And turn on `View > Render side-by-side` (shortcut `Shift+R`).
 
 In this notebook, we will learn how to model behavioral choices by fitting a GLM-HMM, replicating the main findings of Ashwood et al. (2022) <span id="cite1a"></span><a href="#ref1a">[1a]</a>.
 
-In particular, we will analyze the IBL decision-making task  (IBL et al., 2021) <span id="cite2a"></span><a href="#ref2a">[2a]</a>, which is a variation of the two-alternative forced-choice perceptual detection task (Burgess et al. (2021) <span id="cite3"></span><a href="#ref3">[3]</a>. 
+In particular, we will analyze the IBL decision-making task (IBL et al., 2021) <span id="cite2a"></span><a href="#ref2a">[2a]</a>, a variation of the two-alternative forced-choice perceptual detection task (Burgess et al., 2021 <span id="cite3"></span><a href="#ref3">[3]</a>).
 
-During this task, a sinusoidal grating with varying contrast [0\%-100\%] appeared either at the right or left side of the screen. The goal for the mice was to indicate this side turning a little wheel so that this turn would accordingly move the stimuli to the center of the screen (Burgess et al. (2021) <span id="cite3"></span><a href="#ref3">[3]</a>. If the mice chose the side correctly, they would receive a water reward; if not, they would get a noise burst and there would be a 1 second timeout. For the first 90 trials of each session in the task, the stimulus appeared randomly on either side of the screen; after that, the stimulus appeared on one side with fixed probability 0.8 and alternate randomly every 20-100 trials. 
+During this task, a sinusoidal grating with varying contrast [0\%-100\%] appeared either at the right or left side of the screen. The mice indicated this side by turning a small wheel, which moved the stimulus toward the center of the screen (Burgess et al., 2021 <span id="cite3"></span><a href="#ref3">[3]</a>). If the mice chose the side correctly, they would receive a water reward; if not, they would get a noise burst and a 1-second timeout. For the first 90 trials of each session, the stimulus appeared randomly on either side of the screen; after that, it appeared on one side with fixed probability 0.8, alternating randomly every 20–100 trials. 
 
 ## Dataset
 
 <div class="render-all">
-Data for this notebook comes from the IBL decision-making task  (IBL et al., 2021) <span id="cite2a"></span><a href="#ref2a">[2a]</a>, which is a variation of the two-alternative forced-choice perceptual detection task (Burgess et al. (2021) <span id="cite3"></span><a href="#ref3">[3]</a>
+Data for this notebook comes from the IBL decision-making task (IBL et al., 2021) <span id="cite2a"></span><a href="#ref2a">[2a]</a>, a variation of the two-alternative forced-choice perceptual detection task (Burgess et al., 2021 <span id="cite3"></span><a href="#ref3">[3]</a>).
 </div>
 
 
@@ -186,7 +186,7 @@ trials = trials[
 
 ```
 <div class="render-all">
-and see how what is the content.
+and inspect its contents.
 </div>
 
 ```{code-cell} ipython3
@@ -239,15 +239,15 @@ plt.xlabel("Trial number")
 plt.show()
 ```
 
-In  Ashwood et al. (2022)<span id="cite1c"></span><a href="#ref1c">[1c]</a>, only the sessions with less than 10 violations were used. To follow this work, we will now revise the number of violations, defined as trials where the animal made no choice. i.e choice == 0 during the 50-50 trials. For this, we will:
+In Ashwood et al. (2022) <span id="cite1c"></span><a href="#ref1c">[1c]</a>, only sessions with fewer than 10 violations were used. To follow this work, we will now count the number of violations — trials where the animal made no choice (i.e. `choice == 0`) — during the 50-50 trials. For this, we will:
  1) Subset sessions which include 50-50 trials
  2) Exclude sessions with >10 violation trials
 
 <div class="render-user, render-presenter">
-Let's do some pandas wrangling to filter out the sessions that include:
+Let's do some pandas wrangling to keep only the sessions that have:
 
 - The initial 50-50 trial block.
-- Less than 10 invalid trials in that block. 
+- Fewer than 10 invalid trials in that block. 
 
 </div>
 
@@ -295,7 +295,7 @@ Now, with the valid sessions, we can compute the design matrix. In our case, we 
 
 </div>
 
-The first predictor, signed contrast, encodes sensory evidence in 1D. Within this predictor, magnitude reflects strength of evidence and sign encodes direction. The second predictor, previous choice, is a lagged version of current choice, and it reflects serial dependence on decisions. The third predictor, win-stay lose-shift, reflects the interaction between past choice and outcome. If an animal made a decision and it was rewarded in a previous trial, then the predictor indicates to "stay". That is, to repeat that choice. Conversely, if the previous choice was not rewarded, then the predictor indicates to "switch" to the other alternative.
+The first predictor, signed contrast, encodes sensory evidence in 1D. Within this predictor, magnitude reflects strength of evidence and sign encodes direction. The second predictor, previous choice, is a lagged version of current choice, and it reflects serial dependence on decisions. The third predictor, win-stay lose-shift, reflects the interaction between past choice and outcome. If a choice was rewarded on the previous trial, the predictor signals to "stay" (repeat that choice); if it was not rewarded, it signals to "switch" to the other alternative.
 
 Let's go through the process of building the design matrix.
 
@@ -381,9 +381,9 @@ With those two elements we can compute our design matrix for this session. We wi
 
 A basis is a collection of functions that, when combined, can represent more complex relationships. NeMoS has a lot of different basis functions, but here we are interested in using two: ```HistoryConv``` and ```IdentityEval```.
 
-- ```HistoryConv``` includes the history of the samples as predictor. It is intended to be used for including raw history as predictor. You can decide how much history in the past you want to have, but now we only want one choice in the past. We can use this to create the previous choice predictor.
+- ```HistoryConv``` includes the past values of a sample as predictors (raw history). You choose how far back to go; here we only need one trial in the past. We use this to create the previous-choice predictor.
 
-- ```IdentityEval``` includes the samples themselves as predictors. The point of this basis is to make the predictor into a NeMoS object. We can use this for the stimuli predictor. 
+- ```IdentityEval``` uses the samples themselves as predictors; its purpose is simply to wrap them as a NeMoS object. We use this for the stimuli predictor. 
 
 It is very easy to declare our basis objects:
 
@@ -453,7 +453,7 @@ prev_reward_basis = nmo.basis.HistoryConv(1)
 wsls_basis = prev_choice_basis*prev_reward_basis
 ```
 
-Now we have all our bases. We can create an additive basis including all of them and then all we need to do now is to apply the basis transformation to the input data. We can do this by using ```compute_features```. This method is designed to be a high-level interface for transforming input data using the basis functions. 
+Now that we have all our bases, we can combine them into an additive basis and apply the transformation to the input data using ```compute_features```. This method is a high-level interface for transforming input data with the basis functions. 
 
 Even though we need just a few lines of code, there is a lot going on. Here's a breakdown of what is happening:
 1. We will create an additive basis ```basis_object``` with our bases ```stimuli_basis```, ```wsls_basis``` and ```prev_choice_basis```. 
@@ -500,7 +500,7 @@ X_unnormalized[:5,:]
 
 And that's it! We have our unnormalized design matrix with signed contrast, win-stay lose-shift and previous choice as predictors.
 
-As as last step, we now need to normalize our signed contrast predictor.
+As a last step, we normalize the signed-contrast predictor.
 
 <div class="render-presenter, render-user">
 - Z-score the contrast values.
@@ -534,9 +534,9 @@ When fitting a GLM-HMM, we are fitting a separate weight for each feature. Howev
 - (1) Previous choice and (2) WSLS are always exactly −1 or +1. Their values are discrete and bounded, and they already share the same scale.
 - (3) Stimuli contrast is continuous. While it can reach −1 or +1 (full contrast), this value rarely occurs. 
 
-Because the stimuli contrast values are much smaller in typical magnitude than +/-1, the model compensates by assigning a larger weight to match the output scale, simply because its values are numerically smaller. In practice, this results in an artifact of scale that is not reflective of the  true influence of the predictor.
+Because the contrast values are typically much smaller in magnitude than ±1, the model compensates by assigning them a larger weight to match the output scale — purely because the values are numerically smaller. In practice, this is an artifact of scale that does not reflect the true influence of the predictor.
 
-By normalizing, we are rescaling the predictor to have mean 0 and standard deviation of 1. Previous choice and WSLS already on a unit scale by construction — their values are symmetric around zero and their spread is naturally 1. This is why we only normalize signed contrast.
+By normalizing, we rescale the predictor to have mean 0 and standard deviation 1. Previous choice and WSLS are already on a unit scale by construction — their values are symmetric around zero and their spread is naturally 1. This is why we only normalize signed contrast.
 :::
 
 +++
@@ -552,10 +552,10 @@ workshop_utils.plot_design_matrix(X, choices, valid_choices_idx);
 
 ## Model fitting
 
-We are going to fit a Bernoulli GLM-MHM to model binary choices. For this reason, we must convert choices from the original $\{-1, 1\}$ encoding, to $\{0, 1\}$.
+We are going to fit a Bernoulli GLM-HMM to model binary choices. For this reason, we must convert choices from the original $\{-1, 1\}$ encoding to $\{0, 1\}$.
 
 <div class="render-presenter, render-user">
-- To a Bernoulli GLM-HMM we need observations to take a values of 0 or 1.
+- For a Bernoulli GLM-HMM, observations must take values of 0 or 1.
 - Convert choices to 0s and 1s. 1: Left and 0: Right. You can use `np.where`.
 </div>
 
@@ -569,7 +569,7 @@ choices =
 choices = np.where(choices == -1, 0, choices)
 ```
 
-Importantly, do not do 3000 trials at once! Instead, they generally do several sessions of 100-300 trials, and we use all the sessions together to fit our model. For our model to be accurate, we need to tell it when our session boundaries are: we don't want it to compute all sessions as if they were one. 
+Importantly, we don't fit all 3000 trials as one continuous block. The data come as separate sessions of 100–300 trials, and we fit the model on all of them together. For our model to be accurate, we need to tell it when our session boundaries are: we don't want it to compute all sessions as if they were one. 
 
 
 In NeMoS we have two ways of indicating the beginning of a new session. You can use a Pynapple Tsd or TsdFrame to demarcate sessions, in which case session demarcations are inherited from the pynapple objects. Alternatively, when using a design matrix and a choice vector that are Numpy objects, it is necessary to pass a session indicator. This can be:
@@ -632,7 +632,7 @@ When fitting a GLM-HMMs, the likelihood surface is non-convex, and EM-based fitt
 
 :::
 
-Once we created our object, we can fit our model. The fit function takes two mandatory arguments: the design matrix ```X```we created in section 02 and the ```choices```. Additionally, we will also include ```new_sess_mouse```, the new session indicator.
+Once we created our object, we can fit our model. The fit function takes two mandatory arguments: the design matrix ```X``` we created above and the ```choices```. Additionally, we will also include ```new_sess_mouse```, the new session indicator.
 
 
 <div class="render-presenter, render-user">
@@ -715,12 +715,12 @@ workshop_utils.plot_glm_weights(model);
 
 We can see that the coefficients on state 1 have a large weight on the stimulus and low weight on the other predictors. Conversely, in states 2 and 3, the stimulus coefficient is comparatively lower. State 2 has a large positive weight on bias, while State 3 has a large negative weight on bias. Since the sign of our predictors indicates the side of evidence (>0 : left; <0 : right, see the table of variables in section 01) and their magnitude indicates the strength of such evidence, State 2 coefficients suggest a large bias towards leftward choice, while State 3 coefficients suggest a large bias to a rightward choice. All states have similarly low coefficients for prev. choice and wsls, with State 1 showing the smallest of them. 
 
-As a reminder, the task consisted on indicating whether the stimulus was located at the right or the left of the screen using the stimulus contrast information. Thus, the optimal strategy is to maximally use stimulus contrast to guide decision making, and not rely on bias, previous choice or wsls.
+As a reminder, the task required indicating whether the stimulus was on the right or the left of the screen, using the stimulus contrast. The optimal strategy is therefore to rely on stimulus contrast as much as possible, rather than on bias, previous choice, or WSLS.
 
 <div class="render-presenter, render-user">
 
 - State 1 have larger weight on the stimulus and low on the other predictors.
-- The bias weight is larger in absolute value for state 1 and 2, but of opposite sign. (>0 : left; <0 : right)
+- The bias weight is larger in absolute value for state 2 and 3, but of opposite sign. (>0 : left; <0 : right)
 
 </div>
 
@@ -729,7 +729,7 @@ We can also see the fitted transition matrix for our three-state model. This des
 
 <div class="render-presenter, render-user">
 
-- Let's visualize the transition matrix. The utility funciton below plots the heatmap.
+- Let's visualize the transition matrix. The utility function below plots the heatmap.
 
 </div>
 
@@ -740,9 +740,9 @@ workshop_utils.plot_transition_matrix(model);
 ```
 
 ### Using ```smooth_proba``` to visualize and interpret posterior state probabilities
-To better understand the temporal structure of decision making behavior, we can compute the probability of being in each state at each trial, conditioned on the entire observed sequence. For this, we can use ```smooth_proba```. This method uses the forward-backward algorithm to incorporate information from past and future observations. It answers to the question: "Given all observations, what is the probability that the system was in state $k$ at time $t$?"
+To better understand the temporal structure of decision making behavior, we can compute the probability of being in each state at each trial, conditioned on the entire observed sequence. For this, we can use ```smooth_proba```. This method uses the forward-backward algorithm to incorporate information from past and future observations. It answers the question: "Given all observations, what is the probability that the system was in state $k$ at time $t$?"
 
-```smooth_proba``` takes two arguments: a design matrix X and the observed neural activity y. The output is either a ```TsdFrame``` or an array of  posterior probabilities, shape ``(n_time_points, n_states)``. Each row sums to 1 and represents the probability distribution over states at that time point.
+```smooth_proba``` takes two arguments: a design matrix `X` and `y` the observed choices. The output is either a ```TsdFrame``` or an array of  posterior probabilities, shape ``(n_time_points, n_states)``. Each row sums to 1 and represents the probability distribution over states at that time point.
 
 
 <div class="render-presenter, render-user">
@@ -785,7 +785,7 @@ print(
 ```
 
 <div class="render-all">
-Let's plot the frist 90 trials, corresponding to the first session.
+Let's plot the first 90 trials, corresponding to the first session.
 </div>
 
 <div class="render-presenter, render-user">
@@ -801,7 +801,7 @@ for i, c in enumerate(colors):
 ```
 
 <div class="render-all">
-Let's now use the utility function to plot the tree sessions shown in fig 3a of <span id="cite1a"></span><a href="#ref1a">[1a]</a>.
+Let's now use the utility function to plot the three sessions shown in Fig. 3a of <span id="cite1a"></span><a href="#ref1a">[1a]</a>.
 </div>
 
 ```{code-cell} ipython3
@@ -817,7 +817,7 @@ In these sessions, the posterior over latent states can be tracked at each trial
 ### Computing fraction of occupancy and accuracy per state with ```decode_state```
 
 
-We can also be interested in quantify state fractional occupancies (i.e what proportion of the trials a given animal spent in each state) and accuracies per state. For this, we need the inferred sequence of states, and there are (at least) two ways in which we can obtain it: using ```decode_state```.
+We may also want to quantify state fractional occupancies (i.e. what proportion of the trials a given animal spent in each state) and accuracies per state. For this, we need the inferred sequence of states, and there are (at least) two ways in which we can obtain it: using ```decode_state```.
 
 This method finds the single most likely sequence of hidden states that best explains the observed data. It uses the Viterbi algorithm to compute the state sequence that maximizes the joint probability of states and observations. It takes three mandatory parameters, a matrix of predictors `X` of shape `(n_timepoints,n_features)`, a `np.array` or `nap.Tsd` of observations of shape `(n_time_points,)`, and the format of the returned states, either in one-hot encoding format or as an array of shape `(n_time_points,)` containing the decoded state at each timepoint.
 
@@ -847,7 +847,7 @@ decoded_states = model.decode_state(
 decoded_states
 ```
 
-From this we can compute the fractional occupancy, filtering out correctly the nans.
+From this we can compute the fractional occupancy, while correctly filtering out the NaNs.
 
 <div class="render-presenter, render-user">
 
@@ -864,7 +864,7 @@ frac_occupancy_viterbi= np.nansum(decoded_states, axis=0) / valid.sum()
 print(f"Fraction of occupancy {frac_occupancy_viterbi} \n")
 ```
 
-Now, we can compute the general accuracy.
+Now we can compute the overall accuracy.
 
 <div class="render-presenter, render-user">
 
