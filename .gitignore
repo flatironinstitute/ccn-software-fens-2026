@@ -168,7 +168,7 @@ docs/just_code
 docs/source/users/*/*md
 docs/source/presenters/*/*md
 docs/source/_static/_check_figs
-notebooks/
+notebooks/*/*ipynb
 data/
 
 *nwb
