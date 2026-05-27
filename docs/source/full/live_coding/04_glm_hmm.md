@@ -360,7 +360,7 @@ What we need is:
 
 </div>
 
-<div class="render-user">
+<div class="render-user, render-presenter">
 ```{code-cell} ipython3
 # Prev history with history of 1
 prev_choice_basis = nmo.basis.HistoryConv(1)
@@ -378,7 +378,7 @@ prev_choice_basis = nmo.basis.HistoryConv(1)
 
 </div>
 
-<div class="render-user">
+<div class="render-user, render-presenter">
 ```{code-cell} ipython3
 # Identity basis for stimuli
 stimuli_basis = nmo.basis.IdentityEval()
