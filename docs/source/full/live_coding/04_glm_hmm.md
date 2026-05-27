@@ -13,8 +13,16 @@ kernelspec:
 ---
 
 ```{code-cell} ipython3
+:tags: [hide-input, render-all]
+
 import jax
+import numpy as np
+import seaborn as sns
+
 jax.config.update("jax_enable_x64", True)
+np.random.seed(65)
+custom_params = {"axes.spines.right": False, "axes.spines.top": False}
+sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params)#, context="notebook")
 ```
 
 :::{admonition} Download
@@ -41,56 +49,53 @@ In particular, we will analyze the IBL decision-making task  (IBL et al., 2021) 
 
 During this task, a sinusoidal grating with varying contrast [0\%-100\%] appeared either at the right or left side of the screen. The goal for the mice was to indicate this side turning a little wheel so that this turn would accordingly move the stimuli to the center of the screen (Burgess et al. (2021) <span id="cite3"></span><a href="#ref3">[3]</a>. If the mice chose the side correctly, they would receive a water reward; if not, they would get a noise burst and there would be a 1 second timeout. For the first 90 trials of each session in the task, the stimulus appeared randomly on either side of the screen; after that, the stimulus appeared on one side with fixed probability 0.8 and alternate randomly every 20-100 trials. 
 
-<div class="render-user render-presenter">
+## Dataset
+
+<div class="render-all">
 Data for this notebook comes from the IBL decision-making task  (IBL et al., 2021) <span id="cite2a"></span><a href="#ref2a">[2a]</a>, which is a variation of the two-alternative forced-choice perceptual detection task (Burgess et al. (2021) <span id="cite3"></span><a href="#ref3">[3]</a>
 </div>
-
 
 
 ```{figure} ../../_static/IBL_edited.png
 :tags: [render-all]
 :scale: 120%
 :alt: Task illustration
-:align: right
+:align: center
 Task illustration. Modified from IBL et al. (2021) <span id="cite2b"></span><a href="#ref2b">[2b]</a>.
 ```
 
+<div class="render-all">
+Each stimulus is presented either to the left or to the right, with a probability that varies over time.
+
+</div>
+
+
+```{figure} ../../_static/prob_left.svg
+:alt: Probability Left Stimulus
+:align: center
+Probability of left stimulus presentation over trials.
+```
+
+## Data Streaming
+
+<div class="render-all">
+First, let's download the data using  <a href="https://docs.internationalbrainlab.org/notebooks_external/one_quickstart.html">Open Neurophysiology Environment (ONE)</a>
+</div>
 
 
 ```{code-cell} ipython3
-# Imports
+:tags: [render-all]
+
 import jax
 import jax.numpy as jnp
 import numpy as np
 import pynapple as nap
 import seaborn as sns
 from one.api import ONE
-from scipy.stats import zscore
 import matplotlib.pyplot as plt
-from matplotlib.colors import BoundaryNorm, LinearSegmentedColormap
 from nemos.glm_hmm.utils import compute_rate_per_state
 import nemos as nmo
-```
 
-```{code-cell} ipython3
-:tags: [hide-input]
-
-seed = 65  # Random seed for reproducibility
-np.random.seed(seed)
-jax.config.update("jax_enable_x64", True)
-
-# Parameters for plotting
-custom_params = {"axes.spines.right": False, "axes.spines.top": False}
-sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params)#, context="notebook")
-```
-
-## Data Streaming and Task Structure
-
-<div class="render-all">
-First, let's download the data using [Open Neurophysiology Environment (ONE)](https://docs.internationalbrainlab.org/notebooks_external/one_quickstart.html)
-</div>
-
-```{code-cell} ipython3
 # Instantiate the ONE object
 one = ONE(password = 'international')
 
@@ -102,12 +107,19 @@ trials = one.load_aggregate('subjects', subject, '_ibl_subjectTrials.table')
 print(trials.columns)
 ```
 
-```{admonition} Should I use one.search() or load_aggregate to download all the data from an animal?
+:::{admonition} Should I use one.search() or load_aggregate to download all the data from an animal?
 :class: tip dropdown
 
 `one.search()` returns session IDs (eids) that exist as session records in Alyx, while `load_aggregate()` downloads a pre-computed file with trial data pooled across multiple sessions. If you want to get all sessions from a single animal, it is recommended to use `load_aggregate`, because some sessions may be located in a dataframe without a session identifier in itself (but containing multiple sessions with their own session identifiers).
-```
+:::
+
 We can take a subset of those columns to keep only the relevant sources of information. We are modeling choice as result of observables and behavioral state, so we need choice, stimuli presented and reward obtained. Additionally, we want to keep the information of the probability of the stimulus appearing in a given position since this changes within a session, and the session id to know when sessions start and end.
+
+<div class="render-users, render-presenter">
+We only need a subset of those columns, in particular we will work with:
+</div>
+
+<div class="render-all">
 
 | Variable            | Description |
 |---------------------|-------------|
@@ -118,10 +130,28 @@ We can take a subset of those columns to keep only the relevant sources of infor
 | probabilityLeft     | probability of stimulus being presented on the left of the screen |
 | session             | id of session |
 
-Let's extract the meaningful data and see how it looks
+
+Let's extract what we need,
+
+</div>
+
 
 ```{code-cell} ipython3
-trials = trials[["choice", "contrastLeft", "contrastRight", "feedbackType", "probabilityLeft", "session"]]
+:tags: [render-all]
+
+trials = trials[
+    [
+        "choice", "contrastLeft", "contrastRight", 
+        "feedbackType", "probabilityLeft", "session"
+    ]
+]
+
+```
+
+and see how what is the content.
+
+```{code-cell} ipython3
+:tags: [render-all]
 
 print(f"choice \nvalues: {trials.choice.unique()}, data type: {trials.choice.dtype}, shape:  \n")
 print(f"contrast left \nvalues: {trials.contrastLeft.unique()}, data type: {trials.contrastLeft.dtype} \n")
@@ -138,6 +168,8 @@ print(f"session \n(some) values: {trials.session.unique()[:5]}, data type: {tria
 Now, we will restrict the analysis to the first 90 trials of each session to match the work of Ashwood et al. (2022) <span id="cite1b"></span><a href="#ref1b">[1b]</a>. In this segment, the stimulus appears on the left and right with equal probability (0.5/0.5), and thus choices should be driven primarily by sensory evidence rather than learned expectations about stimulus probability.
 
 ```{code-cell} ipython3
+:tags: [render-all]
+
 # Choose example session
 sess_ex = '726b6915-e7de-4b55-a38e-ff4c461211d3'
 # Subset session trials
@@ -301,6 +333,8 @@ And that's it! We have our unnormalized design matrix with signed contrast, win-
 As as last step, we now need to normalize our signed contrast predictor.
 
 ```{code-cell} ipython3
+from scipy.stats import zscore
+
 # Normalize across the signed contrast
 X = np.copy(X_unnormalized)
 X[:, 0] = zscore(X[:, 0])
@@ -323,7 +357,9 @@ By normalizing, we are rescaling the predictor to have mean 0 and standard devia
 and see our design matrix.
 
 ```{code-cell} ipython3
-:tags: [hide-input]
+:tags: [hide-input, render-all]
+
+from matplotlib.colors import LinearSegmentedColormap
 
 def plot_design_matrix():
     fig, axes = plt.subplots(
@@ -378,6 +414,10 @@ def plot_design_matrix():
 ```
 
 ```{code-cell} ipython3
+:tags: [render-all]
+ 
+# This function is defined in the hidden codeblock above
+# and it is just a utility for making a pretty heatmap plot
 plot_design_matrix()
 ```
 
@@ -490,9 +530,10 @@ For a more detailed example of how initialization affects convergence and interp
 Once we created our object, we can fit our model. The fit function takes two mandatory arguments: the design matrix ```X```we created in section 02 and the ```choices```. Additionally, we will also include ```new_sess_mouse```, the new session indicator.
 
 ```{code-cell} ipython3
-model.fit(X, 
-          choices,
-          is_new_session=new_sess_mouse
+model.fit(
+    X, 
+    choices,
+    session_starts=new_sess_mouse
 )
 ```
 
@@ -649,7 +690,7 @@ To better understand the temporal structure of decision making behavior, we can 
 posteriors = model.smooth_proba(
     X, 
     choices,
-    is_new_session=new_sess_mouse
+    session_starts=new_sess_mouse
 )
 print(f"First five osteriors \n{posteriors[:5]} \n")
 
@@ -759,7 +800,7 @@ This function takes three mandatory parameters, a matrix of predictors X of shap
 decoded_states = model.decode_state(
     X,
     choices,
-    is_new_session=new_sess_mouse,
+    session_starts=new_sess_mouse,
     state_format = "one-hot"
 )
 print(f"{decoded_states} \n")
@@ -832,7 +873,7 @@ print(accuracies_to_plot_viterbi)
 And we can plot this :)
 
 ```{code-cell} ipython3
-:tags: [hide-input]
+:tags: [hide-input, render-all]
 
 def plot_accuracy_and_occupancy(frac_occupancy, accuracies_to_plot):
     cols = [
@@ -879,6 +920,8 @@ def plot_accuracy_and_occupancy(frac_occupancy, accuracies_to_plot):
 ```
 
 ```{code-cell} ipython3
+:tags: [render-all]
+
 plot_accuracy_and_occupancy(frac_occupancy_viterbi, accuracies_to_plot_viterbi)
 ```
 
@@ -999,7 +1042,7 @@ model = nmo.glm_hmm.GLMHMM(
 
 model.fit(X, 
           np.asarray(choices),
-          is_new_session=new_sess_mouse
+          session_starts=new_sess_mouse
 )
 ```
 After fitting, we saw that across sessions, behavior could be described as a mixture of a small number of latent strategies that persist over multiple trials rather than independent lapses around a single policy. This is visible in the inferred posterior trajectories and in the Viterbi-decoded state sequences, which show extended dwell times within states. State occupancy and performance analyses further showed that behavioral accuracy is not uniform across latent states. The stimulus-driven state yields higher task-aligned performance, while biased states show reduced accuracy, consistent with reduced sensitivity to sensory evidence.
