@@ -1,6 +1,6 @@
 name: check_jax_version
 on:
-  push
+  push:
   workflow_dispatch:
   schedule:
   - cron: 0 0 * * 0     # weekly
