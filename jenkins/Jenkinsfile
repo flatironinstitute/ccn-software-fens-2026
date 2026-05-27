@@ -29,7 +29,7 @@ try {
               # below clobbering it
               mv docs/build/html \$HOME/built-workshops
            '''
-          lock('neurorse-workshops_publish') {
+          lock(label: 'neurorse_workshop_publish') {
             def scm = scmGit(branches: [[name: 'refs/heads/main']], userRemoteConfigs: [[credentialsId: 'github-jenkins', url: 'https://github.com/flatironinstitute/neurorse-workshops.git']])
             dir(path: 'workshops') {
               checkout(changelog: false, poll: false, scm: scm)
