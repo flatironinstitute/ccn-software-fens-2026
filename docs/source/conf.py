@@ -82,6 +82,6 @@ if run_nb := os.environ.get("RUN_NB"):
     print(f"Excluding notebooks: {nb_execution_excludepatterns}")
 else:
     nb_execution_excludepatterns = []
-    print("Running all notebooks, see CONTRIBUTING for details")
+    print("Running all notebooks")
 
 nb_execution_excludepatterns += ['*-users*', '*-presenters*']
