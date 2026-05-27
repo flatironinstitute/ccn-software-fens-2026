@@ -25,73 +25,7 @@ np.random.seed(65)
 custom_params = {"axes.spines.right": False, "axes.spines.top": False}
 sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params)#, context="notebook")
 
-def plot_glm_weights(model, n_states=3):
-    fig = plt.figure(figsize=(6, 5))
-    colors = ["#ff7f00",  "#4daf4a","#377eb8"]
-
-    n_features = model.coef_.shape[0]+1 # add 1 for the intercept
-
-    # Change order of weights so output matches Ashwood et al. (2022) 2e plot
-    recovered_weights = np.zeros((n_features,n_states)) 
-    recovered_weights[0,:] = model.coef_[0,:] # stimulus
-    recovered_weights[1,:] = model.intercept_ # bias
-    recovered_weights[2,:] = model.coef_[2,:] # prev choice, wsls
-    recovered_weights[3,:] = model.coef_[1,:] # prev choice, wsls
-
-    # Labels
-    X_labels = ["Stimulus", "Bias", "Prev.choice", "WSLS"]
-
-    state_labels = [
-        'State 1: "engaged"',
-        'State 2: "biased left"',
-        'State 3: "biased right"'
-    ]
-
-    for state in range(n_states):
-        plt.plot(
-            range(n_features),
-            recovered_weights[:, state],
-            color=colors[state],
-            marker="o",
-            lw=1.5,
-            label=state_labels[state],
-            linestyle="-",
-        )
-            
-    plt.yticks([-2.5, 0, 2.5, 5])
-    plt.ylabel("GLM weight")
-    plt.xlabel("Covariate")
-    plt.xticks([i for i in range(n_features)], X_labels, fontsize=12, rotation=45)
-    plt.axhline(y=0, color="k", alpha=0.5, ls="--")
-
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
-    
-def plot_transition_matrix(model, n_states= 3):
-    fig = plt.figure(figsize=(8, 3))
-    n_decimals = 3
-    # Plot matrix colors
-    plt.imshow(model.transition_prob_, vmin=-0.8, vmax=1, cmap='bone')
-
-    # Write probabilities
-    for i in range(n_states):
-        for j in range(n_states):
-            text = plt.text(j, i, str(np.around(model.transition_prob_[i, j], decimals=n_decimals))[:n_decimals+2], ha="center", va="center",
-                            color="k")
-    plt.xlim(-0.5, n_states - 0.5)
-    plt.xticks(range(0, n_states), ('1', '2', '3'))
-    plt.xlabel("State t")
-
-    plt.yticks(range(0, n_states), ('1', '2', '3'))
-    plt.ylim(n_states - 0.5, -0.5)
-    plt.ylabel("State t-1",)
-
-    plt.title("Transition matrix")
-    plt.subplots_adjust(0, 0, 1, 1)
-    plt.show()
-    return None
-    
+import workshop_utils
 ```
 
 :::{admonition} Download
@@ -610,67 +544,10 @@ By normalizing, we are rescaling the predictor to have mean 0 and standard devia
 and see our design matrix.
 
 ```{code-cell} ipython3
-:tags: [hide-input, render-all]
-
-from matplotlib.colors import LinearSegmentedColormap
-
-def plot_design_matrix():
-    fig, axes = plt.subplots(
-        1, 
-        2, 
-        figsize=(3.5, 8), 
-        sharey=True,
-    )
-
-    # ---- define signed contrast bins 
-
-    cmap_cat = LinearSegmentedColormap.from_list(
-        "bias_map",
-        ["#377eb8", "white", "#4daf4a"]  # left → neutral → right
-    )
-
-    # ---- heatmap 1: full design matrix ----
-    sns.heatmap(
-        X[:20,:],
-        ax=axes[0],
-        square=True,
-        cmap=cmap_cat,
-        cbar=False,
-        vmin=-2.4,
-        vmax= 2.4
-    )
-
-    axes[0].set_xticks([0.5, 1.5, 2.5],
-                    ["Sign. contr.", "WSLS", "Prev. choice",], 
-                    rotation=90)
-    axes[0].set_yticks([])
-    axes[0].set_ylabel("Trials")
-    axes[0].set_title("Design \nmatrix")
-
-    # ---- heatmap 2: choices ----
-    sns.heatmap(
-        choices[valid_choices_idx].to_numpy().reshape(-1, 1)[:20],
-        ax=axes[1],
-        square=True,
-        cmap=cmap_cat,
-        cbar=True,
-        vmin=-2.4,
-        vmax= 2.4
-    )
-    axes[0].set_yticks([])
-    axes[1].set_xticks([0.5], 
-                    ["Choices"], 
-                    rotation=90)
-
-    plt.tight_layout()
-    plt.show()
-```
-
-```{code-cell} ipython3
 :tags: [render-all]
  
-# Plot an heatmap showing the mdoel design
-plot_design_matrix()
+# Plot an heatmap showing the model design
+workshop_utils.plot_design_matrix(X, choices, valid_choices_idx);
 ```
 
 ## Model fitting
@@ -833,25 +710,62 @@ We can plot the GLM weights obtained for our 3-state model.
 ```{code-cell} ipython3
 :tags: [render-all]
 
-plot_glm_weights(model)
+workshop_utils.plot_glm_weights(model);
 ```
 
 We can see that the coefficients on state 1 have a large weight on the stimulus and low weight on the other predictors. Conversely, in states 2 and 3, the stimulus coefficient is comparatively lower. State 2 has a large positive weight on bias, while State 3 has a large negative weight on bias. Since the sign of our predictors indicates the side of evidence (>0 : left; <0 : right, see the table of variables in section 01) and their magnitude indicates the strength of such evidence, State 2 coefficients suggest a large bias towards leftward choice, while State 3 coefficients suggest a large bias to a rightward choice. All states have similarly low coefficients for prev. choice and wsls, with State 1 showing the smallest of them. 
 
 As a reminder, the task consisted on indicating whether the stimulus was located at the right or the left of the screen using the stimulus contrast information. Thus, the optimal strategy is to maximally use stimulus contrast to guide decision making, and not rely on bias, previous choice or wsls.
 
+<div class="render-presenter, render-user">
+
+- State 1 have larger weight on the stimulus and low on the other predictors.
+- The bias weight is larger in absolute value for state 1 and 2, but of opposite sign. (>0 : left; <0 : right)
+
+</div>
 
 ### Interpreting the transition matrix
 We can also see the fitted transition matrix for our three-state model. This describes the transition probabilities among the different states, each corresponding to a different decision-making strategy. Large entries in the diagonal indicate a high probability of remaining in the same state for multiple trials in a row.
 
+<div class="render-presenter, render-user">
+
+- Let's visualize the transition matrix. The utility funciton below plots the heatmap.
+
+</div>
+
 ```{code-cell} ipython3
-plot_transition_matrix(model)
+:tags: [render-all]
+
+workshop_utils.plot_transition_matrix(model);
 ```
 
-### Using ```smooth_proba``` to see and interpret posterior state probabilities
+### Using ```smooth_proba``` to visualize and interpret posterior state probabilities
 To better understand the temporal structure of decision making behavior, we can compute the probability of being in each state at each trial, conditioned on the entire observed sequence. For this, we can use ```smooth_proba```. This method uses the forward-backward algorithm to incorporate information from past and future observations. It answers to the question: "Given all observations, what is the probability that the system was in state $k$ at time $t$?"
 
 ```smooth_proba``` takes two arguments: a design matrix X and the observed neural activity y. The output is either a ```TsdFrame``` or an array of  posterior probabilities, shape ``(n_time_points, n_states)``. Each row sums to 1 and represents the probability distribution over states at that time point.
+
+
+<div class="render-presenter, render-user">
+
+- Call `smooth_proba` to compute the smoothing posterior probabilities of the latent states.
+- Remember to provide the `session_starts=new_sess_mouse` parameter to mark the beginning of each session.
+- Filter non-nan entries and check that the posterior sums to 1 over the states.
+
+</div>
+
+<div class="render-presenter, render-user">
+```{code-cell} ipython3
+# Compute smooth_proba
+posteriors = 
+print(f"First five osteriors \n{posteriors[:5]} \n")
+# Each (valid) posterior row sums to 1
+valid = ~np.isnan(posteriors).any(axis=1)
+print(
+    "Does the posterior sum to one?", 
+    np.allclose( , 1)
+)
+```
+</div>
 
 ```{code-cell} ipython3
 # Compute smooth_proba
@@ -862,105 +776,65 @@ posteriors = model.smooth_proba(
 )
 print(f"First five osteriors \n{posteriors[:5]} \n")
 
-# Each (non nan) row sums to 1
+# Each (valid) posterior row sums to 1
 valid = ~np.isnan(posteriors).any(axis=1)
 print(
-    f"Each row sums to 1: {np.allclose(posteriors[valid].sum(axis=1), 1)}"
+    "Does the posterior sum to one?", 
+    np.allclose(posteriors[valid].sum(axis=1), 1)
 )
 ```
 
-And we can plot it!
+<div class="render-all">
+Let's plot the frist 90 trials, corresponding to the first session.
+</div>
+
+<div class="render-presenter, render-user">
+
+- Use `color=["#ff7f00", "#4daf4a", "#377eb8"]` for a matching color code.
+
+</div>
 
 ```{code-cell} ipython3
-:tags: [hide-input]
-
-
-def plot_posteriors(posteriors):
-    # Pick three sessions to plot
-    sess_to_plot = [
-        '0ccee376-2873-47dd-9293-c19e424c1bee',
-        '66f20f92-171f-4cc5-aca9-69fc3cb6370f',
-        '19f4acbd-aeac-4f83-9f30-85a8aa002820'
-    ]
-
-    # Get these sessions' indexes
-    sess_ex_1 = np.where(session == sess_to_plot[0])[0]
-    sess_ex_2 = np.where(session == sess_to_plot[1])[0]
-    sess_ex_3 = np.where(session == sess_to_plot[2])[0]
-
-    sess_examples = [sess_ex_1, sess_ex_2, sess_ex_3]
-
-    colors =["#ff7f00", "#4daf4a", "#377eb8"]
-    fig, ax = plt.subplots(1,3,figsize=(20, 4))
-
-    for i, sess_ex in enumerate(sess_examples):
-        for state in range(n_states):
-            # Plot all trials for a given session and state
-            ax[i].plot(
-                posteriors[sess_ex][:, state],
-                label="State " + str(state + 1), 
-                lw=3,
-                color=colors[state]
-    )
-            ax[i].set_title("Example session " + str(i + 1))
-            if i == 0:
-                ax[i].set_xticks(
-                    [
-                        0, 
-                        45, 
-                        90
-                    ], 
-                    [
-                        "0", 
-                        "45", 
-                        "90"
-                    ], 
-                )
-                ax[i].set_ylabel("P(state)")
-                ax[i].set_xlabel("Trial #")
-                ax[i].set_yticks(
-                    [0, 0.5, 1], 
-                    ["0", "0.5", "1"], 
-                )
-            else:
-                ax[i].set_xticks(
-                    [
-                        0, 
-                        45, 
-                        90
-                    ], 
-                    [
-                        " ", 
-                        " ", 
-                        " "
-                    ], 
-                )
-                ax[i].set_yticks(
-                    [0, 0.5, 1], 
-                    [" ", " ", " "], 
-                )
-    return None
+colors = ["#ff7f00", "#4daf4a", "#377eb8"]
+for i, c in enumerate(colors):
+    plt.plot(posteriors[:90, i], color=c)
 ```
 
+<div class="render-all">
+Let's now use the utility function to plot the tree sessions shown in fig 3a of <span id="cite1a"></span><a href="#ref1a">[1a]</a>.
+</div>
+
 ```{code-cell} ipython3
-plot_posteriors(posteriors)
+:tags: [render-all]
+
+workshop_utils.plot_posteriors(posteriors, session);
 ```
 
 In these sessions, the posterior over latent states can be tracked at each trial, revealing strong confidence in state assignments and extended periods where a single state persists across consecutive trials. This pattern is inconsistent with the short, transient lapses assumed in lapse-based models.
 
 
 
-### Computing fraction of occupancy and accuracy per state using ```decode_state``` or ```smooth_proba```
+### Computing fraction of occupancy and accuracy per state with ```decode_state```
 
 
-We can also be interested in quantify state occupancies (i.e what proportion of the trials a given animal spent in each state) and accuracies per state. For this, we need the inferred sequence of states, and there are (at least) two ways in which we can obtain it: using ```decode_state``` or using ```smooth_proba```.
+We can also be interested in quantify state fractional occupancies (i.e what proportion of the trials a given animal spent in each state) and accuracies per state. For this, we need the inferred sequence of states, and there are (at least) two ways in which we can obtain it: using ```decode_state```.
 
+This method finds the single most likely sequence of hidden states that best explains the observed data. It uses the Viterbi algorithm to compute the state sequence that maximizes the joint probability of states and observations. It takes three mandatory parameters, a matrix of predictors `X` of shape `(n_timepoints,n_features)`, a `np.array` or `nap.Tsd` of observations of shape `(n_time_points,)`, and the format of the returned states, either in one-hot encoding format or as an array of shape `(n_time_points,)` containing the decoded state at each timepoint.
 
+<div class="render-presenter, render-user">
 
-#### Using ```decode_state```
-This method finds the single most likely sequence of hidden states that best explains the observed data. It uses the Viterbi algorithm to compute the state sequence that maximizes the joint probability of states and observations.
+- Get the most likely sequence of states given the observation by calling `decode_state`, which runs the Viterbi (also known as max-sum) algorithm.
+- Remember to provide the `session_starts=new_sess_mouse`
 
-This function takes three mandatory parameters, a matrix of predictors X of shape (n_timepoints,n_features), a np.array or nap.Tsd of observations of shap (n_time_points,), and the format of the returned states, either in one-hot encoding format or as an array of shape (n_time_points,) containing the decoded state at each timepoint.
+</div>
+
+<div class="render-presenter, render-user">
+```{code-cell} ipython3
+# get output of viterbi in one-hot encoding
+decoded_states = 
+decoded_states
+```
+</div>
 
 ```{code-cell} ipython3
 # get output of viterbi in one-hot encoding
@@ -970,261 +844,136 @@ decoded_states = model.decode_state(
     session_starts=new_sess_mouse,
     state_format = "one-hot"
 )
-print(f"{decoded_states} \n")
+decoded_states
+```
 
-# calculate how many instances of occupancy there is in each of them
-print(f"Total instances of each state {np.nansum(decoded_states, axis=0)} \n")
+From this we can compute the fractional occupancy, filtering out correctly the nans.
 
-# calculate fraction of occupancy
-frac_occupancy_viterbi= np.nansum(decoded_states, axis=0)/len(choices)
+<div class="render-presenter, render-user">
+
+- Compute the fractional occupancy for each state.
+- Remember that the decoded states may contain NaNs.
+
+</div>
+
+```{code-cell} ipython3
+
+# calculate occupancy
+valid = np.all(~np.isnan(decoded_states), axis=1)
+frac_occupancy_viterbi= np.nansum(decoded_states, axis=0) / valid.sum()
 print(f"Fraction of occupancy {frac_occupancy_viterbi} \n")
 ```
 
 Now, we can compute the general accuracy.
 
+<div class="render-presenter, render-user">
+
+- Compute the accuracy:
+  - Mask out the 0 contrast stimuli
+  - `choice==0`: right choice, `choice==1`: left choice.
+  - `signed_contrast < 0`: left stimulus presented, `signed_contrast > 0`: right stimulus presented.
+  - Use convention above to get the accuracy.
+
+</div>
+
+<div class="render-presenter, render-user">
 ```{code-cell} ipython3
-# See where the input is not 0
-non_zero_contrast_loc = np.where(signed_contrast!=0)
-non_zero_contrast = signed_contrast[non_zero_contrast_loc]
+# mask out the 0 contrast stimuli
+mask =
+# compute stimulus and chocie side applying the mask
+stim_side =
+# compute the accuracy
+total_accuracy = 
+# store in an array of dim 4
+accuracies_to_plot_viterbi = np.zeros(4)
+accuracies_to_plot_viterbi[0] = total_accuracy
+```
+</div>
 
-# Get correct answer by looking at sign
-correct_ans_task = np.sign(non_zero_contrast)
+```{code-cell} ipython3
+# mask out the 0 contrast stimuli
+mask = signed_contrast != 0
 
-# Transform into 0-1 to compare with choices
-correct_ans_task_remapped = (correct_ans_task+ 1) / 2
+# compute stimulus and chocie side
+stim_side = signed_contrast > 0
 
-# Get accuracy i.e how many choices match / how many choices were made
-correct_ans_mouse = np.sum(choices[non_zero_contrast_loc] == correct_ans_task_remapped) 
+# get the correct choices boolean
+correct_choices = choices == stim_side
 
-total_accuracy = correct_ans_mouse/len(correct_ans_task)
+# compute the total accuracy applying the mask
+total_accuracy = np.mean(correct_choices[mask])
 
-# Create array of accuracies for plotting
-accuracies_to_plot_viterbi = np.zeros([4,])
-
-# Add total accuracy
+# store in an array of dim 4
+accuracies_to_plot_viterbi = np.zeros(4)
 accuracies_to_plot_viterbi[0] = total_accuracy
 ```
 
 And then we can use our output of ```decode_state``` to segment the trials into the estimated states and compute the accuracy within each state.
 
+
+<div class="render-presenter, render-user">
+
+- Loop over the states and apply the same calculation to get the accuracy per state.
+
+</div>
+
 ```{code-cell} ipython3
-for state in range(n_states): 
-    # index of trials per state
-    idx_this_state = np.where(decoded_states[:,state] == 1)
-    
-    # Get contrast and choices for this state
-    signed_contrast_this_state = signed_contrast[idx_this_state]
-    choices_this_state = choices[idx_this_state]
-    
-    # See where the input is not 0
-    not_zero_contrast_loc_this_state = np.where(signed_contrast_this_state != 0)[0]
-    non_zero_contrast_this_state = signed_contrast_this_state[not_zero_contrast_loc_this_state]
-    
-    # Get correct answer by looking at sign
-    correct_ans_this_state = np.sign(non_zero_contrast_this_state)
-    
-    # Transform into 0-1 to compare with choices
-    correct_ans_task_this_state_remapped = (correct_ans_this_state+ 1) / 2
+accuracy_per_state = np.zeros(n_states)
+for s in range(n_states):
+  in_state = (decoded_states[:, s] == 1) & mask
+  accuracy_per_state[s] = correct_choices[in_state].mean()
 
-    # Get accuracy i.e how many choices match / how many choices were made
-    correct_ans_mouse_this_state = np.sum(choices_this_state[not_zero_contrast_loc_this_state] == correct_ans_task_this_state_remapped) 
-    
-    accuracy_this_state = correct_ans_mouse_this_state / len(correct_ans_this_state)
-    
-    # Add state accuracy for plotting
-    accuracies_to_plot_viterbi[state+1] = accuracy_this_state
-
-print(accuracies_to_plot_viterbi)
-```
+accuracies_to_plot_viterbi[1:] = accuracy_per_state
+ ```
 
 And we can plot this :)
 
-```{code-cell} ipython3
-:tags: [hide-input, render-all]
+<div class="render-presenter, render-user">
 
-def plot_accuracy_and_occupancy(frac_occupancy, accuracies_to_plot):
-    cols = [
-        "#ff7f00", "#4daf4a", "#377eb8", '#f781bf', '#a65628', '#984ea3',
-            '#999999', '#e41a1c', '#dede00'
-        ]
+- Plot the output.
 
-    fig, axes = plt.subplots(1, 2, figsize=(10, 4))
-
-    # Left: state occupancies
-    ax = axes[0]
-    for z, occ in enumerate(frac_occupancy):
-        ax.bar(z, occ, width=0.8, color=cols[z])
-        ax.text(z, occ, f"{occ:.2f}", ha='center', va='bottom', fontsize=10)
-
-    ax.set_ylim(0, 1)
-    ax.set_xticks([0, 1, 2])
-    ax.set_xticklabels(['1', '2', '3'])
-    ax.set_yticks([0, 0.5, 1])
-    ax.set_xlabel('state')
-    ax.set_ylabel('frac. occupancy')
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-
-    # Right: accuracies
-    ax = axes[1]
-    for z, acc in enumerate(accuracies_to_plot):
-        col = 'grey' if z == 0 else cols[z - 1]
-        ax.bar(z, acc * 100, width=0.8, color=col)
-        ax.text(z, acc * 100 + 1, f"{acc*100:.2f}", ha='center', va='bottom', fontsize=10)
-
-    ax.set_ylim(50, 100)
-    ax.set_xticks([0, 1, 2, 3])
-    ax.set_xticklabels(['All', '1', '2', '3'])
-    ax.set_yticks([50, 75, 100])
-    ax.set_xlabel('state')
-    ax.set_ylabel('accuracy (%)')
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-
-    plt.tight_layout()
-    plt.show()
-    return None
-```
+</div>
 
 ```{code-cell} ipython3
 :tags: [render-all]
 
-plot_accuracy_and_occupancy(frac_occupancy_viterbi, accuracies_to_plot_viterbi)
+workshop_utils.plot_accuracy_and_occupancy(
+    frac_occupancy_viterbi, 
+    accuracies_to_plot_viterbi
+);
 ```
 
-According to state occupancy derived with the Viterbi algorithm, this mouse spent the majority of the trials (71%) in the engaged state and a lesser portion of trials in the other two states (29%). We can see that even though this mouse had an overall accuracy of 80.36%, it achieved a higher accuracy of 86.93% in the "engaged" state compared to 66.03% and 62.15% in the "bias left" and "bias right", respectively.
+According to state occupancy derived with the Viterbi algorithm, this mouse spent the majority of the trials (70%) in the engaged state and a lesser portion of trials in the other two states (30%). We can see that even though this mouse had an overall accuracy of 80.36%, it achieved a higher accuracy of 87.04% in the "engaged" state compared to 66.03% and 63.03% in the "bias left" and "bias right", respectively.
 
-+++
+## Additional Exercises
 
-#### Using ```smooth_proba```
-Now we can compute the same quantities but using ```smooth_probs```. We used this method to compute the posterior probabilities! In contrast to ```decode_state```, which outputs the globally optimally state sequence, ```smooth_proba``` outputs probabilistic posteriors. With this alternative, we can go by the approach used in Ashwood et al. (2022): we can compute the posterior probability for each state at all times, and subset the trials for which there is high confidence (+90% probability) of being in a given state; then, we can assign each trial to its most likely state and count the fraction of trials assigned to each state. 
+<div class="render-all">
 
-The process is very similar to the one we used in the previous section, with the difference in how we slice the trials and assign them to a specific state. We can start with the fraction of occupancy.
+- Compute the accuracy segmenting the trials according to the smoothing posterior, as was done in the original paper. Restrict the analysis over the trials in which the model highly confident about the state assignment. For example keep only trials that have a smoothing of posterior >90% probability of being assigned to a state.  Compare the results with the procedure shown here.
 
-```{code-cell} ipython3
-# Get most likely state on a trial by trial basis
-states_max_posterior = np.argmax(posteriors, axis=1)
-print(f"Most likely state trial by trial \n {states_max_posterior} \n")
+- Try playing with the regularization strength and see what happens to the learned GLM parameters. Do the result still hold as you decrease the regularization strength? What happens to the model predictions? Try to cross-validate the regularization strength and see if how the optimal regularizer compares with the one used here (nemos default, which is 1).
 
-# Calculate how many instances of occupancy there is in each of them
-occupancy_per_state = np.unique(states_max_posterior, return_counts=True)[1]
-print(f"Total instances of each state {occupancy_per_state} \n")
+- What happens you add/remove states? Can you cross-validate the number of state? Which one seems to be the optimal number of states according to your cross-validation procedure? Can you get a better cross-validated likelihood with a larger number of states?
 
-# calculate fraction of occupancy
-frac_occupancy_smooth_proba = occupancy_per_state/len(choices)
-print(f"Fraction of occupancy {frac_occupancy_smooth_proba } \n")
-```
+</div>
 
-```{code-cell} ipython3
-# Segment trials into states estimated on a trial by trial basis
-idx_per_state = []
-for state in range(n_states): 
-    idx_per_state.append(np.where(posteriors[:, state] >= 0.9)[0])
-```
 
-With this segmentation, we can calculate accuracy in the exact same manner as in the previous section.
-
-```{code-cell} ipython3
-:tags: [hide-input]
-
-def get_accuracies_to_plot(idx_per_state, total_accuracy=total_accuracy, n_states=n_states, signed_contrast=signed_contrast, choices=choices):
-    # Total accuracy remains the same
-    accuracies_to_plot = np.zeros([4,])
-    # Use previously calculated total_accuracy
-    accuracies_to_plot[0] = total_accuracy
-    for state in range(n_states): 
-        # index of trials per state
-        idx_this_state = idx_per_state[state]
-
-        # Get contrast and choices for this state
-        signed_contrast_this_state = signed_contrast[idx_this_state]
-        choices_this_state = choices[idx_this_state]
-        
-        # See where the input is not 0
-        not_zero_contrast_loc_this_state = np.where(signed_contrast_this_state != 0)[0]
-        non_zero_contrast_this_state = signed_contrast_this_state[not_zero_contrast_loc_this_state]
-        
-        # Get correct answer by looking at sign
-        correct_ans_this_state = np.sign(non_zero_contrast_this_state)
-        
-        # Transform into 0-1 to compare with choices
-        correct_ans_task_this_state_remapped = (correct_ans_this_state+ 1) / 2
-
-        # Get accuracy i.e how many choices match / how many choices were made
-        correct_ans_mouse_this_state = np.sum(choices_this_state[not_zero_contrast_loc_this_state] == correct_ans_task_this_state_remapped) 
-        
-        accuracy_this_state = correct_ans_mouse_this_state / len(correct_ans_this_state)
-        
-        # Add state accuracy for plotting
-        accuracies_to_plot[state+1] = accuracy_this_state
-    return accuracies_to_plot
-```
-
-```{code-cell} ipython3
-accuracies_to_plot_smooth_proba = get_accuracies_to_plot(idx_per_state)
-
-plot_accuracy_and_occupancy(frac_occupancy_smooth_proba,accuracies_to_plot_smooth_proba)
-```
-
-According to state occupancy derived by using the most likely state with the posterior distribution on a trial by trial basis, this mouse spent the majority of the trials (68%) in the engaged state and a lesser portion of trials in the other two states (32%). We can see that even though this mouse had an overall accuracy of 80.36%, it achieved a higher accuracy of 88.89% in the "engaged" state compared to 61.40% and 59.05% in the "bias left" and "bias right", respectively.
-
-Here, we obtained different results than in the previous section. This can be explained by the use of different algorithms for segmenting the trials. While Viterbi finds the most likely sequence of states as a whole, the method in the previous section calculates what the most likely state is on a trial by trial basis, and only keeps the state with large confidence (>90%).
-
-+++
-
-## Conclusion
-We showed how to download and preprocess mice data from the IBL, how to create a design matrix and use it to fit choice data using a GLM-HMM, and how to interpret the results.
-
-Using basis objects, we created a design matrix with three predictors: stimulus, previous choice and WSLS. Using NeMoS, this just took a few lines of code:
-```
-prev_choice_basis = nmo.basis.HistoryConv(1)
-stimuli_basis = nmo.basis.IdentityEval()
-prev_reward_basis = nmo.basis.HistoryConv(1)
-
-# Multiplicative basis: interaction between prev. choice and reward
-wsls_basis = prev_choice_basis*prev_reward_basis
-
-# Additive basis using our three basis
-basis_object = (
-    stimuli_basis +                         # will process one input
-    wsls_basis +                            # will process two inputs (choice & reward)
-    prev_choice_basis                       # will process one input
-)
-
-# Compute features
-X_unnormalized = basis_object.compute_features(
-    signed_contrast[valid_choices_idx],     # input 1 : processed with stimuli_basis
-    choices[valid_choices_idx],             # input 2 : wsls input 1: choice
-    rewarded[valid_choices_idx],            # input 3 : wsls input 2: reward
-    choices[valid_choices_idx]              # input 4 : processed with prev_choice
-)           
-```
-Similarly, the fitting process using NeMoS was also very fast and easy:
-```
-n_states = 3
-
-model = nmo.glm_hmm.GLMHMM(
-    n_states,
-    regularizer = "Ridge")
-
-model.fit(X, 
-          np.asarray(choices),
-          session_starts=new_sess_mouse
-)
-```
-After fitting, we saw that across sessions, behavior could be described as a mixture of a small number of latent strategies that persist over multiple trials rather than independent lapses around a single policy. This is visible in the inferred posterior trajectories and in the Viterbi-decoded state sequences, which show extended dwell times within states. State occupancy and performance analyses further showed that behavioral accuracy is not uniform across latent states. The stimulus-driven state yields higher task-aligned performance, while biased states show reduced accuracy, consistent with reduced sensitivity to sensory evidence.
-
-+++
 
 ## Additional resources
+
+<div class="render-all">
+
 - [NeMoS background on GLM-HMMs - Pending]()
 - [Bishop (2006) Chapter 13 "Sequential Data"](https://www.microsoft.com/en-us/research/wp-content/uploads/2006/01/Bishop-Pattern-Recognition-and-Machine-Learning-2006.pdf): Specially section 13.2, "Hidden Markov Models", provides an overview of MLE for HMMs, the forward-backward algorithm and the viterbi algorithm.
 - [Zoe Ashwood's SSM tutorial on GLM-HMMs](https://github.com/zashwood/ssm/blob/master/notebooks/2b%20Input%20Driven%20Observations%20(GLM-HMM).ipynb): this educational notebook explains GLM-HMMs and fitting with MLE and MAP.
 - [GLM-HMMs blogpost by Camila Ucheoma](https://anneurai.net/2024/01/26/a-glm-hmm-deep-dive/): this blogpost provides a summary of Ashwood et al. (2022) work and a brief explanation of GLM-HMMs
 
-+++
+</div>
 
 ## References
+
+<div class="render-all">
+
 <a id="ref1a"><a href="#cite1a">[1a]</a> <a id="ref1b"><a href="#cite1b">[1b]</a> <a id="ref1c"><a href="#cite1c">[1c]</a> <a id="ref1d"><a href="#cite1d">[1d]</a> <a id="ref1e"><a href="#cite1e">[1e]</a> [Ashwood, Z. C., Roy, N. A., Stone, I. R., Laboratory, I. B., Urai, A. E., Churchland, A. K., Pouget, A., & Pillow, J. W. (2022). Mice alternate between discrete strategies during perceptual decision-making. Nature Neuroscience, 25(2), 201–212.](https://doi.org/10.1038/s41593-021-01007-z)
 
 <a id="ref2a"><a href="#cite2a">[2a]</a><a id="ref2b"> <a href="#cite2b">[2b]</a> <a id="ref2c"><a href="#cite2c">[2c]</a> [The International Brain Laboratory, Aguillon-Rodriguez, V., Angelaki, D., Bayer, H., Bonacchi, N., Carandini, M., Cazettes, F., Chapuis, G., Churchland, A. K., Dan, Y., Dewitt, E., Faulkner, M., Forrest, H., Haetzel, L., Häusser, M., Hofer, S. B., Hu, F., Khanal, A., Krasniak, C., … Zador, A. M. (2021). Standardized and reproducible measurement of decision-making in mice. eLife, 10, e63711.](https://doi.org/10.7554/eLife.63711)
@@ -1232,3 +981,5 @@ After fitting, we saw that across sessions, behavior could be described as a mix
 <a id="ref3"><a href="#cite3">[3]</a> [Burgess, C. P., Lak, A., Steinmetz, N. A., Zatka-Haas, P., Bai Reddy, C., Jacobs, E. A. K., Linden, J. F., Paton, J. J., Ranson, A., Schröder, S., Soares, S., Wells, M. J., Wool, L. E., Harris, K. D., & Carandini, M. (2017). High-Yield Methods for Accurate Two-Alternative Visual Psychophysics in Head-Fixed Mice. Cell Reports, 20(10), 2513–2524.](https://doi.org/10.1016/j.celrep.2017.08.047)
 
 <a id="ref4"><a href="#cite4">[4]</a> [Escola, S., Fontanini, A., Katz, D., & Paninski, L. (2011). Hidden Markov models for the stimulus-response relationships of multistate neural systems. Neural Computation, 23(5), 1071–1132.](https://doi.org/10.1162/NECO_a_00118)
+
+</div>
