@@ -52,6 +52,7 @@ dependencies = [
     "seaborn",
     "pooch",
     "fsspec",
+    "ONE-api",
 ]
 
 # Configure package discovery for setuptools

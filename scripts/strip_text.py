@@ -47,10 +47,11 @@ for md in (repo_dir / "docs/source/full").glob("*/*md"):
     # - the document metadata header
     # - all markdown headers (e.g., # TITLE), with optional preceding anchor (e.g., (anchor)=)
     # - all code cells
+    # - all figures
     # - all divs with a render class
     # - all admonitions (in colon fences)
     regex_str = (
-        r"---.*?---|(?:\([a-z_-]+\)= *\n)?^#.*?$|```{code-cell}.*?```|<div class=.render.*?/div>|:::.*?:::"
+        r"---.*?---|(?:\([a-z_-]+\)= *\n)?^#.*?$|```{code-cell}.*?```|```{figure}.*?```|<div class=.render.*?/div>|:::.*?:::"
     )
     preserved_text = re.findall(regex_str, contents, re.MULTILINE | re.DOTALL)
 
@@ -62,7 +63,10 @@ for md in (repo_dir / "docs/source/full").glob("*/*md"):
     # render-presenter or render-all
     presenter_text = []
     for t in preserved_text:
-        if ":::" in t:
+        if "{figure}" in t:
+            if "render-presenter" in t or "render-all" in t:
+                presenter_text.append(t)
+        elif ":::" in t:
             if "render-presenter" in t or "render-all" in t:
                 presenter_text.append(t)
         elif "<div" in t and "render" in t:
@@ -86,7 +90,10 @@ for md in (repo_dir / "docs/source/full").glob("*/*md"):
     user_text = []
     empty_code_cell = "```{code-cell}\n# enter code here\n```\n"
     for t in preserved_text:
-        if "<div" in t and "render" in t:
+        if "{figure}" in t:
+            if "render-user" in t or "render-all" in t:
+                user_text.append(t)
+        elif "<div" in t and "render" in t:
             if "render-user" in t or "render-all" in t:
                 # remove all divs
                 t = re.sub(r" *</?div.*", "", t)
