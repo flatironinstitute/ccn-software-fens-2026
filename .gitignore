@@ -165,8 +165,8 @@ cython_debug/
 
 # don't add files here, generate them
 docs/just_code
-docs/source/users
-docs/source/presenters
+docs/source/users/*/*md
+docs/source/presenters/*/*md
 docs/source/_static/_check_figs
 notebooks/
 data/
