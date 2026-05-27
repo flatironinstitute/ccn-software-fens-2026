@@ -68,6 +68,30 @@ def plot_glm_weights(model, n_states=3):
     plt.tight_layout()
     plt.show()
     
+def plot_transition_matrix(model, n_states= 3):
+    fig = plt.figure(figsize=(8, 3))
+    n_decimals = 3
+    # Plot matrix colors
+    plt.imshow(model.transition_prob_, vmin=-0.8, vmax=1, cmap='bone')
+
+    # Write probabilities
+    for i in range(n_states):
+        for j in range(n_states):
+            text = plt.text(j, i, str(np.around(model.transition_prob_[i, j], decimals=n_decimals))[:n_decimals+2], ha="center", va="center",
+                            color="k")
+    plt.xlim(-0.5, n_states - 0.5)
+    plt.xticks(range(0, n_states), ('1', '2', '3'))
+    plt.xlabel("State t")
+
+    plt.yticks(range(0, n_states), ('1', '2', '3'))
+    plt.ylim(n_states - 0.5, -0.5)
+    plt.ylabel("State t-1",)
+
+    plt.title("Transition matrix")
+    plt.subplots_adjust(0, 0, 1, 1)
+    plt.show()
+    return None
+    
 ```
 
 :::{admonition} Download
@@ -816,38 +840,9 @@ We can see that the coefficients on state 1 have a large weight on the stimulus 
 
 As a reminder, the task consisted on indicating whether the stimulus was located at the right or the left of the screen using the stimulus contrast information. Thus, the optimal strategy is to maximally use stimulus contrast to guide decision making, and not rely on bias, previous choice or wsls.
 
-+++
 
 ### Interpreting the transition matrix
 We can also see the fitted transition matrix for our three-state model. This describes the transition probabilities among the different states, each corresponding to a different decision-making strategy. Large entries in the diagonal indicate a high probability of remaining in the same state for multiple trials in a row.
-
-```{code-cell} ipython3
-:tags: [hide-input]
-
-def plot_transition_matrix(model, n_states= n_states):
-    fig = plt.figure(figsize=(8, 3))
-    n_decimals = 3
-    # Plot matrix colors
-    plt.imshow(model.transition_prob_, vmin=-0.8, vmax=1, cmap='bone')
-
-    # Write probabilities
-    for i in range(n_states):
-        for j in range(n_states):
-            text = plt.text(j, i, str(np.around(model.transition_prob_[i, j], decimals=n_decimals))[:n_decimals+2], ha="center", va="center",
-                            color="k")
-    plt.xlim(-0.5, n_states - 0.5)
-    plt.xticks(range(0, n_states), ('1', '2', '3'))
-    plt.xlabel("State t")
-
-    plt.yticks(range(0, n_states), ('1', '2', '3'))
-    plt.ylim(n_states - 0.5, -0.5)
-    plt.ylabel("State t-1",)
-
-    plt.title("Transition matrix")
-    plt.subplots_adjust(0, 0, 1, 1)
-    plt.show()
-    return None
-```
 
 ```{code-cell} ipython3
 plot_transition_matrix(model)
@@ -953,15 +948,14 @@ plot_posteriors(posteriors)
 
 In these sessions, the posterior over latent states can be tracked at each trial, revealing strong confidence in state assignments and extended periods where a single state persists across consecutive trials. This pattern is inconsistent with the short, transient lapses assumed in lapse-based models.
 
-+++
+
 
 ### Computing fraction of occupancy and accuracy per state using ```decode_state``` or ```smooth_proba```
 
-+++
 
 We can also be interested in quantify state occupancies (i.e what proportion of the trials a given animal spent in each state) and accuracies per state. For this, we need the inferred sequence of states, and there are (at least) two ways in which we can obtain it: using ```decode_state``` or using ```smooth_proba```.
 
-+++
+
 
 #### Using ```decode_state```
 This method finds the single most likely sequence of hidden states that best explains the observed data. It uses the Viterbi algorithm to compute the state sequence that maximizes the joint probability of states and observations.
