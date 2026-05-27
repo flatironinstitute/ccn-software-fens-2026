@@ -147,8 +147,9 @@ trials = trials[
 ]
 
 ```
-
+<div class="render-all">
 and see how what is the content.
+</div>
 
 ```{code-cell} ipython3
 :tags: [render-all]
@@ -165,7 +166,9 @@ print(f"probability of stimulus on left \nvalues: {trials.probabilityLeft.unique
 print(f"session \n(some) values: {trials.session.unique()[:5]}, data type: {trials.session.dtype}\n")
 ```
 
-Now, we will restrict the analysis to the first 90 trials of each session to match the work of Ashwood et al. (2022) <span id="cite1b"></span><a href="#ref1b">[1b]</a>. In this segment, the stimulus appears on the left and right with equal probability (0.5/0.5), and thus choices should be driven primarily by sensory evidence rather than learned expectations about stimulus probability.
+<div class="render-all">
+Finally, let's focus our analysis on one example session.
+</div>
 
 ```{code-cell} ipython3
 :tags: [render-all]
@@ -174,6 +177,19 @@ Now, we will restrict the analysis to the first 90 trials of each session to mat
 sess_ex = '726b6915-e7de-4b55-a38e-ff4c461211d3'
 # Subset session trials
 trials_sess = trials[trials.session == sess_ex].reset_index()
+```
+
+Now, we will restrict the analysis to the first 90 trials of each session to match the work of Ashwood et al. (2022) <span id="cite1b"></span><a href="#ref1b">[1b]</a>. In this segment, the stimulus appears on the left and right with equal probability (0.5/0.5), and thus choices should be driven primarily by sensory evidence rather than learned expectations about stimulus probability.
+
+<div class="render-user, render-presenter">
+
+To match Ashwood et al. (2022) <span id="cite1b"></span><a href="#ref1b">[1b]</a>, we will focus our analysis on the first 90 trials.
+
+</div>
+
+```{code-cell} ipython3
+:tags: [render-all]
+
 
 # Plot
 plt.plot(trials_sess["probabilityLeft"][:300])
@@ -212,7 +228,8 @@ violations = (
 
 # Apply both restrictions
 valid_sessions = violations[
-    (violations < 10) & (violations.index.isin(valid_prob_sessions[valid_prob_sessions == True].index))
+    (violations < 10) & 
+    (violations.index.isin(valid_prob_sessions[valid_prob_sessions == True].index))
 ].index.tolist()
 
 # Make sure they maintain the order of the original dataset (we don't want scrambled trials)
