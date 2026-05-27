@@ -42,7 +42,7 @@ dependencies = [
     'jupyter',
     "jupyterlab>=4.5",
     'pillow',
-    'nemos>=0.2.6',
+    'nemos @ git+https://github.com/flatironinstitute/nemos.git@glm-hmm-ref-fit',
     'pynapple',
     'click',
     'ipython',
