@@ -183,7 +183,7 @@ Now, we will restrict the analysis to the first 90 trials of each session to mat
 
 <div class="render-user, render-presenter">
 
-To match Ashwood et al. (2022) <span id="cite1b"></span><a href="#ref1b">[1b]</a>, we will focus our analysis on the first 90 trials.
+To match Ashwood et al. (2022) <span id="cite1b"></span><a href="#ref1b">[1b]</a>, we will focus our analysis on the first 90 trials, in which the stimulus appears on the left and right with equal probability (50-50).
 
 </div>
 
@@ -205,62 +205,81 @@ In  Ashwood et al. (2022)<span id="cite1c"></span><a href="#ref1c">[1c]</a>, onl
  1) Subset sessions which include 50-50 trials
  2) Exclude sessions with >10 violation trials
 
+<div class="render-user, render-presenter">
+Let's do some pandas wrangling to filter out the sessions that include:
+
+- The initial 50-50 trial block.
+- Less than 10 invalid trials in that block. 
+
+</div>
+
 ```{code-cell} ipython3
-# Create a list of ids
-sessions_ids = trials.session.unique()
+:tags: [render-all]
 
-# keep only relevant columns for filtering
-df_trials = trials[["session", "probabilityLeft", "choice"]]
-
-# Get which sessions contain exactly {0.2, 0.5, 0.8}
-valid_prob_sessions = (
-    df_trials.groupby("session")["probabilityLeft"]
-      .agg(lambda x: set(x.unique()) == {0.2, 0.5, 0.8})
-)
-
-# Compute violations only on 50-50 trials
+# Invalid choice marker
 viol_val = 0
-violations = (
-    df_trials[df_trials["probabilityLeft"] == 0.5]
-    .groupby("session")["choice"]
-    .apply(lambda x: (x == viol_val).sum())
+
+# Boolean mask selecting sessions with 50-50, 20-80 and 80-20 blocks
+has_three_blocks = (
+    trials.groupby("session")["probabilityLeft"]
+          .agg(lambda s: set(s.unique()) == {0.2, 0.5, 0.8})
 )
 
-# Apply both restrictions
-valid_sessions = violations[
-    (violations < 10) & 
-    (violations.index.isin(valid_prob_sessions[valid_prob_sessions == True].index))
-].index.tolist()
+# Boolean mask selecing sessions with < 10 invalid trials in the 50-50 block
+violations = (
+    trials.query("probabilityLeft == 0.5")
+          .groupby("session")["choice"]
+          .agg(lambda s: s.eq(viol_val).sum())
+)
 
-# Make sure they maintain the order of the original dataset (we don't want scrambled trials)
-valid_set = set(valid_sessions)
-valid_sessions = [
-    s for s in trials["session"].drop_duplicates()
-    if s in valid_set
-]
-print(f"# of sessions before restrictions {len(df_trials.session.unique())}")
+valid_sessions = has_three_blocks.index[has_three_blocks & (violations < 10)]
 
-# Now we can select only the valid sessions for subsequent analyses
-df_trials = trials[
-    (trials["session"].isin(valid_sessions)) & (df_trials["probabilityLeft"] == 0.5)
-]
-print(f"# of sessions after restrictions {len(df_trials.session.unique())}")
+print(f"# of sessions before restrictions {trials['session'].nunique()}")
+
+# Keep only the 50/50 trials from valid sessions (row order preserved by the filter)
+df_trials = trials.query("session in @valid_sessions and probabilityLeft == 0.5")
+
+print(f"# of sessions after restrictions {df_trials['session'].nunique()}")
 ```
 
 ## Design matrix
-Now, with the valid sessions, we can compute the design matrix. In our case, we are interested in building a design matrix with three predictors: signed contrast, previous choice and win stay lose shift.
 
+<div class="render-all">
+Now, with the valid sessions, we can compute the design matrix. In our case, we are interested in building a design matrix with three predictors: signed contrast, previous choice and win stay lose shift.
+</div>
+
+(design-matrix-table)=
 ```{figure} ../../_static/design_matrix_table.png
+:tags: render-all
 :alt: Design matrix
 :align: right
 
 ```
 
-+++
-
 The first predictor, signed contrast, encodes sensory evidence in 1D. Within this predictor, magnitude reflects strength of evidence and sign encodes direction. The second predictor, previous choice, is a lagged version of current choice, and it reflects serial dependence on decisions. The third predictor, win-stay lose-shift, reflects the interaction between past choice and outcome. If an animal made a decision and it was rewarded in a previous trial, then the predictor indicates to "stay". That is, to repeat that choice. Conversely, if the previous choice was not rewarded, then the predictor indicates to "switch" to the other alternative.
 
 Let's go through the process of building the design matrix with one session.
+
+<div class="render-presenter, render-user">
+
+- Select the frist valid session from the dataframe `df_trials`.
+- Extract the columns we need for the design: `choice`, `contrastLeft`, `contrastRight` and `feedbackType` (reward). 
+
+</div>
+
+<div class="render-user">
+```{code-cell} ipython3
+# Select an example session
+example_session_id = valid_sessions[0]  
+df_example_session = 
+# Select the necessary columns (and reset_index + drop): 
+# choice, contrast of stimuli and reward
+choices = 
+stim_left = 
+stim_right = 
+rewarded = 
+```
+</div>
 
 ```{code-cell} ipython3
 # Select an example session
@@ -277,19 +296,49 @@ rewarded = df_example_session['feedbackType'].reset_index(drop=True)
 
 For the first predictor: signed contrast.
 
+<div class="render-presenter, render-user">
+
+- Replace `NaN` contrast values with `0` using `np.nan_to_num`.
+- Compute the signed contrast (difference between left and right)
+
+</div>
+
+<div class="render-user, render-presenter">
 ```{code-cell} ipython3
-# Create stim vector
+# Replace nans with 0s
+stim_left = 
+stim_right = 
+# Compute the signed contrast (left - right)
+signed_contrast = 
+print(signed_contrast)
+```
+</div>
+
+```{code-cell} ipython3
+# Replace nans with 0s
 stim_left = np.nan_to_num(stim_left, nan=0)
 stim_right = np.nan_to_num(stim_right, nan=0)
 
-# now get 1D stim
+# Compute the signed contrast
 signed_contrast = stim_left - stim_right
 print(signed_contrast)
 ```
 
+<div class="render-presenter, render-user">
+
+- Get the index of the valid trials with `np.flatnonzero`
+
+</div>
+
+
+<div class="render-user, render-presenter">
 ```{code-cell} ipython3
-# Get rid of violation trials
-valid_choices_idx = np.where(~choices.isin([viol_val]))[0]
+valid_choices_idx =
+```
+</div>
+
+```{code-cell} ipython3
+valid_choices_idx = np.flatnonzero(choices != viol_val)
 ```
 
 With those two elements we can compute our design matrix for this session. We will do this using the NeMoS basis class ```nmo.basis```, which will make the process a lot easier.
@@ -302,14 +351,62 @@ A basis is a collection of functions that, when combined, can represent more com
 
 It is very easy to declare our basis objects:
 
+<div class="render-user, render-presenter">
+Let's use the `basis` module from  NeMoS to define the design matrix. 
+
+What we need is:
+
+- A `HistoryConv` basis to capture the choice history. We need a `window_size=1` to include the previous 1 choice as predictor.
+
+</div>
+
+<div class="render-user">
 ```{code-cell} ipython3
 # Prev history with history of 1
 prev_choice_basis = nmo.basis.HistoryConv(1)
+```
+</div>
+
+```{code-cell} ipython3
+# Prev history with history of 1
+prev_choice_basis = nmo.basis.HistoryConv(1)
+```
+
+<div class="render-user, render-presenter">
+
+- A `IdentityEval` basis to include the signed contrast as is. This may seem pointless, but will allow us to add the basis and form the full design matrix in one go.
+
+</div>
+
+<div class="render-user">
+```{code-cell} ipython3
+# Identity basis for stimuli
+stimuli_basis = nmo.basis.IdentityEval()
+```
+</div>
+
+```{code-cell} ipython3
 # Identity basis for stimuli
 stimuli_basis = nmo.basis.IdentityEval()
 ```
 
-However, we are still missing one predictor: win-stay lose-shift. This is an interaction of previous choice with previous reward. To capture interaction between variables, we can use a [multiplicative basis object](../background/basis/plot_02_ND_basis_function.md), which takes the outer product of the elements that compose it.
+However, we are still missing one predictor: win-stay lose-shift. This is an interaction of previous choice with previous reward. To capture interaction between variables, we can use a [multiplicative basis object](https://nemos.readthedocs.io/en/latest/background/basis/plot_02_ND_basis_function.html#n-dimensional-basis), which takes the outer product of the elements that compose it.
+
+<div class="render-user, render-presenter">
+
+- Win-stay lose-shift is the product of previous choice and current reward, [see table above](design-matrix-table).
+- We can use [basis multiplication](https://nemos.readthedocs.io/en/latest/background/basis/plot_02_ND_basis_function.html#n-dimensional-basis) to construct that predictor. 
+
+</div>
+
+<div class="render-user, render-presenter">
+```{code-cell} ipython3
+# Create lagged reward predictor
+prev_reward_basis = 
+# Multiply with reward basis to get the win-stay lose shift basis
+wsls_basis = 
+```
+</div>
 
 ```{code-cell} ipython3
 # Create lagged reward predictor
