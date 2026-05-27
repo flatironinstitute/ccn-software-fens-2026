@@ -959,11 +959,11 @@ According to state occupancy derived with the Viterbi algorithm, this mouse spen
 
 <div class="render-all">
 
-- Compute the accuracy segmenting the trials according to the smoothing posterior, as was done in the original paper. Restrict the analysis over the trials in which the model highly confident about the state assignment. For example keep only trials that have a smoothing of posterior >90% probability of being assigned to a state.  Compare the results with the procedure shown here.
+- Compute the accuracy by segmenting the trials according to the smoothing posterior, as was done in the original paper. Restrict the analysis to trials in which the model is highly confident about the state assignment — for example, keep only trials where the smoothing posterior assigns a state more than 90% probability. Compare the results with the procedure shown here.
 
-- Try playing with the regularization strength and see what happens to the learned GLM parameters. Do the result still hold as you decrease the regularization strength? What happens to the model predictions? Try to cross-validate the regularization strength and see if how the optimal regularizer compares with the one used here (nemos default, which is 1).
+- Try varying the regularization strength and see what happens to the learned GLM parameters. Do the results still hold as you decrease the regularization strength? What happens to the model predictions? Try cross-validating the regularization strength and see how the optimal regularizer compares with the one used here (the nemos default, which is 1).
 
-- What happens you add/remove states? Can you cross-validate the number of state? Which one seems to be the optimal number of states according to your cross-validation procedure? Can you get a better cross-validated likelihood with a larger number of states?
+- What happens when you add or remove states? Can you cross-validate the number of states? Which number seems optimal according to your cross-validation procedure? Can you get a better cross-validated likelihood with more states?
 
 </div>
 
@@ -973,7 +973,6 @@ According to state occupancy derived with the Viterbi algorithm, this mouse spen
 
 <div class="render-all">
 
-- [NeMoS background on GLM-HMMs - Pending]()
 - [Bishop (2006) Chapter 13 "Sequential Data"](https://www.microsoft.com/en-us/research/wp-content/uploads/2006/01/Bishop-Pattern-Recognition-and-Machine-Learning-2006.pdf): Specially section 13.2, "Hidden Markov Models", provides an overview of MLE for HMMs, the forward-backward algorithm and the viterbi algorithm.
 - [Zoe Ashwood's SSM tutorial on GLM-HMMs](https://github.com/zashwood/ssm/blob/master/notebooks/2b%20Input%20Driven%20Observations%20(GLM-HMM).ipynb): this educational notebook explains GLM-HMMs and fitting with MLE and MAP.
 - [GLM-HMMs blogpost by Camila Ucheoma](https://anneurai.net/2024/01/26/a-glm-hmm-deep-dive/): this blogpost provides a summary of Ashwood et al. (2022) work and a brief explanation of GLM-HMMs
