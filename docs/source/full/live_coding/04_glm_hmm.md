@@ -98,6 +98,7 @@ First, let's download the data using  <a href="https://docs.internationalbrainla
 ```{code-cell} ipython3
 :tags: [render-all]
 
+import os
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -109,7 +110,9 @@ from nemos.glm_hmm.utils import compute_rate_per_state
 import nemos as nmo
 
 # Instantiate the ONE object
-one = ONE(password = 'international')
+data_dir = os.environ.get("NEMOS_DATA_DIR")
+print("IBL data dir:", data_dir)
+one = ONE(password = 'international', cache_dir=data_dir)
 
 # Then we need to choose our subject and run load_aggregate
 subject = "CSHL_008"
