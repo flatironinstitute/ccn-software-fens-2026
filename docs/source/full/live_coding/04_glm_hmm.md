@@ -112,7 +112,9 @@ import nemos as nmo
 # Instantiate the ONE object
 data_dir = os.environ.get("NEMOS_DATA_DIR")
 print("IBL data dir:", data_dir)
+ONE.setup(base_url='https://openalyx.internationalbrainlab.org', silent=True)
 one = ONE(password = 'international', cache_dir=data_dir)
+
 
 # Then we need to choose our subject and run load_aggregate
 subject = "CSHL_008"
