@@ -13,16 +13,16 @@ authors = [
 ]
 description = "Utilities for FENS 2026 CCN software workshop"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 keywords = ["neuroscience", "Poisson-GLM"]
 license = { file = "LICENSE" }
 classifiers = [
     "Intended Audience :: Science/Research",
     "Natural Language :: English",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13"
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14"
 ]
 
 # Define dependencies for the project
@@ -42,7 +42,7 @@ dependencies = [
     'jupyter',
     "jupyterlab>=4.5",
     'pillow',
-    'nemos>=0.2.6',
+    'nemos @ git+https://github.com/flatironinstitute/nemos.git@development',
     'pynapple',
     'click',
     'ipython',
@@ -57,6 +57,7 @@ dependencies = [
     # installed.
     "jax==0.9.2",
     "fsspec",
+    "ONE-api",
 ]
 
 # Configure package discovery for setuptools
