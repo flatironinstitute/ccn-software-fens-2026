@@ -124,11 +124,6 @@ trials = one.load_aggregate('subjects', subject, '_ibl_subjectTrials.table')
 print(trials.columns)
 ```
 
-:::{admonition} Should I use one.search() or load_aggregate to download all the data from an animal?
-:class: tip dropdown
-
-`one.search()` returns session IDs (eids) that exist as session records in Alyx, while `load_aggregate()` downloads a pre-computed file with trial data pooled across multiple sessions. If you want to get all sessions from a single animal, it is recommended to use `load_aggregate`, because some sessions may be located in a dataframe without a session identifier in itself (but containing multiple sessions with their own session identifiers).
-:::
 
 We can take a subset of those columns to keep only the relevant sources of information. We are modeling choice as result of observables and behavioral state, so we need choice, stimuli presented and reward obtained. Additionally, we want to keep the information of the probability of the stimulus appearing in a given position since this changes within a session, and the session id to know when sessions start and end.
 
