@@ -80,7 +80,7 @@ def main():
         if "index.md" in f.name:
             continue
         output_f = (nb_dir / f.parent.name / f.name.replace("md", "ipynb")).absolute()
-        output_f.parent.mkdir(exist_ok=True)
+        output_f.parent.mkdir(parents=True, exist_ok=True)
         subprocess.run(
             ["jupytext", f.absolute(), "-o", output_f, "--from", "myst"], cwd=repo_dir
         )
