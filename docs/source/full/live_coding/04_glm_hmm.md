@@ -304,7 +304,7 @@ Now, with the valid sessions, we can compute the design matrix. In our case, we 
 <div class="render-all">
 
 
-![Design matrix](../../_static/design_matrix_table.png)
+![Design matrix](../../_static/design_matrix_table.svg)
 
 
 </div>
