@@ -52,11 +52,15 @@ And turn on `View > Render side-by-side` (shortcut `Shift+R`).
 
 # Infer behavioral strategies during decision making with GLM-HMMs
 
+<div class="render-all">
+
 In this notebook, we will learn how to model behavioral choices by fitting a GLM-HMM, replicating the main findings of Ashwood et al. (2022) <span id="cite1a"></span><a href="#ref1a">[1a]</a>.
 
 In particular, we will analyze the IBL decision-making task (IBL et al., 2021) <span id="cite2a"></span><a href="#ref2a">[2a]</a>, a variation of the two-alternative forced-choice perceptual detection task (Burgess et al., 2021 <span id="cite3a"></span><a href="#ref3a">[3a]</a>).
 
 During this task, a sinusoidal grating with varying contrast [0\%-100\%] appeared either at the right or left side of the screen. The mice indicated this side by turning a small wheel, which moved the stimulus toward the center of the screen (Burgess et al., 2021 <span id="cite3b"></span><a href="#ref3b">[3b]</a>). If the mice chose the side correctly, they would receive a water reward; if not, they would get a noise burst and a 1-second timeout. For the first 90 trials of each session, the stimulus appeared randomly on either side of the screen; after that, it appeared on one side with fixed probability 0.8, alternating randomly every 20–100 trials. 
+
+</div>
 
 ## Dataset
 
