@@ -27,6 +27,12 @@ sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_par
 
 import workshop_utils
 ```
+:::{admonition} Working without pynapple
+:class: note render-all
+
+Unlike the other notebooks in this workshop, here we work directly with `pandas` DataFrames and `numpy` arrays rather than pynapple objects. The IBL trial data is naturally tabular (one row per trial, with no continuous time axis), so we keep it as a DataFrame and show how NeMoS interfaces with plain NumPy. NeMoS also accepts pynapple `Tsd`/`TsdFrame` objects directly, and we point out as we go where that would change the workflow (for example, how session boundaries are handled).
+:::
+
 
 :::{admonition} Download
 :class: important render-all
@@ -192,14 +198,14 @@ and inspect its contents.
 ```{code-cell} ipython3
 :tags: [render-all]
 
-print(f"choice \nvalues: {trials.choice.unique()}, data type: {trials.choice.dtype}, shape:  \n")
-print(f"contrast left \nvalues: {trials.contrastLeft.unique()}, data type: {trials.contrastLeft.dtype} \n")
+print(f"choice \nvalues: {np.sort(trials.choice.unique())}, data type: {trials.choice.dtype}, shape:  \n")
+print(f"contrast left \nvalues: {np.sort(trials.contrastLeft.unique())}, data type: {trials.contrastLeft.dtype} \n")
 
-print(f"contrast right \nvalues: {trials.contrastRight.unique()}, data type: {trials.contrastRight.dtype} \n")
+print(f"contrast right \nvalues: {np.sort(trials.contrastRight.unique())}, data type: {trials.contrastRight.dtype} \n")
 
-print(f"reward \nvalues: {trials.feedbackType.unique()}, data type: {trials.feedbackType.dtype} \n")
+print(f"reward \nvalues: {np.sort(trials.feedbackType.unique())}, data type: {trials.feedbackType.dtype} \n")
 
-print(f"probability of stimulus on left \nvalues: {trials.probabilityLeft.unique()}, data type: {trials.probabilityLeft.dtype} \n")
+print(f"probability of stimulus on left \nvalues: {np.sort(trials.probabilityLeft.unique())}, data type: {trials.probabilityLeft.dtype} \n")
 
 print(f"session \n(some) values: {trials.session.unique()[:5]}, data type: {trials.session.dtype}\n")
 ```
@@ -237,6 +243,8 @@ plt.axvline(90, color="skyblue", linestyle="--")
 plt.ylabel("P(stimulus on the left)")
 plt.xlabel("Trial number")
 plt.show()
+
+#TODO: add dropdown with original figures.
 ```
 
 In Ashwood et al. (2022) <span id="cite1c"></span><a href="#ref1c">[1c]</a>, only sessions with fewer than 10 violations were used. To follow this work, we will now count the number of violations — trials where the animal made no choice (i.e. `choice == 0`) — during the 50-50 trials. For this, we will:
@@ -246,7 +254,8 @@ In Ashwood et al. (2022) <span id="cite1c"></span><a href="#ref1c">[1c]</a>, onl
 <div class="render-user, render-presenter">
 Let's do some pandas wrangling to keep only the sessions that have:
 
-- The initial 50-50 trial block.
+- Filter to sessions that went through all testing blocks (in particular all 50-50, 20-80 and 80-20 blocks). 
+- Get the initial 50-50 trial block.
 - Fewer than 10 invalid trials in that block. 
 
 </div>
@@ -257,6 +266,7 @@ Let's do some pandas wrangling to keep only the sessions that have:
 # Invalid choice marker
 viol_val = 0
 
+# Selecting the sessions as in the Ashwood at al. paper
 # Boolean mask selecting sessions with 50-50, 20-80 and 80-20 blocks
 has_three_blocks = (
     trials.groupby("session")["probabilityLeft"]
@@ -320,11 +330,11 @@ rewarded =
 
 # We can select all the necessary values for the design matrix: 
 # choice, contrast of stimuli and reward
-choices = df_trials['choice'].reset_index(drop=True)
-stim_left = df_trials['contrastLeft'].reset_index(drop=True)
-stim_right = df_trials['contrastRight'].reset_index(drop=True)
-rewarded = df_trials['feedbackType'].reset_index(drop=True)
-session = df_trials['session'].reset_index(drop=True).to_numpy()
+choices = df_trials['choice'].values
+stim_left = df_trials['contrastLeft'].values
+stim_right = df_trials['contrastRight'].values
+rewarded = df_trials['feedbackType'].values
+session = df_trials['session'].values
 ```
 
 For the first predictor: signed contrast.
@@ -377,9 +387,8 @@ valid_choices_idx =
 valid_choices_idx = np.flatnonzero(choices != viol_val)
 ```
 
-With those two elements we can compute our design matrix for this session. We will do this using the NeMoS basis class ```nmo.basis```, which will make the process a lot easier.
+With those two elements we can compute our design matrix for this session, we can do this using nemos basis objects: 
 
-A basis is a collection of functions that, when combined, can represent more complex relationships. NeMoS has a lot of different basis functions, but here we are interested in using two: ```HistoryConv``` and ```IdentityEval```.
 
 - ```HistoryConv``` includes the past values of a sample as predictors (raw history). You choose how far back to go; here we only need one trial in the past. We use this to create the previous-choice predictor.
 
@@ -482,8 +491,10 @@ X_unnormalized[:5,:]
 ```{code-cell} ipython3
 # Create an additive basis using our three components
 basis_object = (
-    stimuli_basis +                         # will process one input
-    wsls_basis +                            # will process two inputs (choice & reward)
+    # will process one input
+    stimuli_basis +  
+    # will process two inputs (choice & reward)                      
+    wsls_basis +                           
     prev_choice_basis                       # will process one input
 )
 
@@ -517,11 +528,14 @@ X[:, 0] =
 </div>
 
 ```{code-cell} ipython3
-from scipy.stats import zscore
-
 # Copy the array (we'll need the un-normalized later)
 X = np.copy(X_unnormalized)
+```
 
+We z-score only the signed-contrast predictor (column 0), leaving the previous-choice and WSLS columns untouched since they are already on a unit scale. See the dropdown below for why this matters.
+
+```{code-cell} ipython3
+from scipy.stats import zscore
 # Apply z-scoring
 X[:, 0] = zscore(X[:, 0])
 ```
@@ -593,16 +607,21 @@ new_sess_mouse =
 new_sess_mouse = np.flatnonzero(session[1:] != session[:-1]) + 1
 ```
 
+:::{admonition} How does this one-liner find the session starts?
+:class: note dropdown render-all
+
+`session` holds one session id per trial. Comparing `session[1:]` (every trial but the first) with `session[:-1]` (every trial but the last) yields a boolean array that is `True` wherever a trial's session id differs from the previous trial's — that is, exactly at the session boundaries. `np.flatnonzero` returns the indices where this is `True`, and we add `1` because the comparison is shifted by one (position `i` in the comparison corresponds to trial `i+1`). The result is the array of indices at which a new session begins.
+:::
+
 Let's initialize the ```GLMHMM``` object. The only required parameter is the number of states. Ashwood et al. (2022) <span id="cite1d"></span><a href="#ref1d">[1d]</a> found that most mice used 3 decision-making states when performing this task. Following that work, we will initialize our ```GLMHMM``` object with 3 states.
 
-```{admonition} GLM-HMM observation models
-:class: note
+The likelihood of a GLM-HMM is non-convex, so the EM algorithm used to fit it can converge to different local optima depending on the starting parameters. NeMoS initializes the model for you: by default, the per-state intercepts are set to match the empirical choice probability, and the GLM coefficients are drawn from a Gaussian centered at zero with a small standard deviation. The `seed` argument controls this random draw, so in practice you should refit the model with several seeds and keep the solution with the highest log-likelihood.
 
-The default observation model for the GLM-HMM is Bernoulli, but Categorical (Multinomial), Poisson, Gamma, Negative Binomial and Gaussian observation models are also available. If you want, you can also set a different observation model of your choice and personalize the inverse link function. However, bear in mind that convexity is not guaranteed for all likelihood functions.
-```
 
 <div class="render-presenter, render-user">
 - Initialize the `GLMHMM` object with 3 states and `regularizer="Ridge"`.
+- Set seed for trying different initial parameters.
+- By default, the intercept is set to match the empirical choice probability, and the coefficients are set as random gaussian centered at zero with small standard deviation.
 </div>
 
 
@@ -620,17 +639,11 @@ n_states = 3
 model = nmo.glm_hmm.GLMHMM(
     n_states,
     regularizer="Ridge",
+    seed=123, # change this to try multiple init.
 )
 
 model
 ```
-
-:::{admonition} Importance of initial parameters in GLM-HMMs
-:class: question render-all
-:class: dropdown
-When fitting a GLM-HMMs, the likelihood surface is non-convex, and EM-based fitting can converge to different local optima depending on starting values. As a result, different initializations can lead to qualitatively different parameters. In practice, this makes it necessary to either run multiple random restarts or use informed initializations derived from simpler models (e.g. logistic regression or clustering of behavior).
-
-:::
 
 Once we created our object, we can fit our model. The fit function takes two mandatory arguments: the design matrix ```X``` we created above and the ```choices```. Additionally, we will also include ```new_sess_mouse```, the new session indicator.
 
@@ -757,7 +770,7 @@ To better understand the temporal structure of decision making behavior, we can 
 ```{code-cell} ipython3
 # Compute smooth_proba
 posteriors = 
-print(f"First five osteriors \n{posteriors[:5]} \n")
+print(f"First five posteriors \n{posteriors[:5]} \n")
 # Each (valid) posterior row sums to 1
 valid = ~np.isnan(posteriors).any(axis=1)
 print(
@@ -774,7 +787,7 @@ posteriors = model.smooth_proba(
     choices,
     session_starts=new_sess_mouse
 )
-print(f"First five osteriors \n{posteriors[:5]} \n")
+print(f"First five posteriors \n{posteriors[:5]} \n")
 
 # Each (valid) posterior row sums to 1
 valid = ~np.isnan(posteriors).any(axis=1)
@@ -783,6 +796,8 @@ print(
     np.allclose(posteriors[valid].sum(axis=1), 1)
 )
 ```
+
+The first trial of each session is `NaN`: the posterior depends on the transition from the previous trial's state, which doesn't exist at a session start. Hence we mask out the NaNs before checking that the rows sum to one.
 
 <div class="render-all">
 Let's plot the first 90 trials, corresponding to the first session.
@@ -810,16 +825,16 @@ Let's now use the utility function to plot the three sessions shown in Fig. 3a o
 workshop_utils.plot_posteriors(posteriors, session);
 ```
 
-In these sessions, the posterior over latent states can be tracked at each trial, revealing strong confidence in state assignments and extended periods where a single state persists across consecutive trials. This pattern is inconsistent with the short, transient lapses assumed in lapse-based models.
+In these sessions, the posterior over latent states can be tracked at each trial, revealing strong confidence in state assignments and extended periods where a single state persists across consecutive trials. 
 
 
 
-### Computing fraction of occupancy and accuracy per state with ```decode_state```
+### Understanding mouse behavior in different states
 
 
-We may also want to quantify state fractional occupancies (i.e. what proportion of the trials a given animal spent in each state) and accuracies per state. For this, we need the inferred sequence of states, and there are (at least) two ways in which we can obtain it: using ```decode_state```.
+We may also want to quantify state fractional occupancies (i.e. what proportion of the trials a given animal spent in each state) and accuracies per state. For this, we need the inferred sequence of states, this can be obtained using the Viterbi algorithm that you can run by calling the  ```decode_state``` method.
 
-This method finds the single most likely sequence of hidden states that best explains the observed data. It uses the Viterbi algorithm to compute the state sequence that maximizes the joint probability of states and observations. It takes three mandatory parameters, a matrix of predictors `X` of shape `(n_timepoints,n_features)`, a `np.array` or `nap.Tsd` of observations of shape `(n_time_points,)`, and the format of the returned states, either in one-hot encoding format or as an array of shape `(n_time_points,)` containing the decoded state at each timepoint.
+This method finds the single most likely sequence of hidden states that best explains the observed data: the state sequence that maximizes the joint probability of states and observations. It takes three mandatory parameters, a matrix of predictors `X` of shape `(n_timepoints,n_features)`, a `np.array` or `nap.Tsd` of observations of shape `(n_time_points,)`, and the format of the returned states, either in one-hot encoding format or as an array of shape `(n_time_points,)` containing the decoded state at each timepoint.
 
 <div class="render-presenter, render-user">
 
