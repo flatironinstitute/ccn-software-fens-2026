@@ -131,7 +131,7 @@ print(trials.columns)
 ```
 
 
-We can take a subset of those columns to keep only the relevant sources of information. We are modeling choice as result of observables and behavioral state, so we need choice, stimuli presented and reward obtained. Additionally, we want to keep the information of the probability of the stimulus appearing in a given position since this changes within a session, and the session id to know when sessions start and end.
+`trials` is a pandas DataFrame, with one row per trial and one column per measured variable. We can take a subset of those columns to keep only the relevant sources of information. We are modeling choice as result of observables and behavioral state, so we need choice, stimuli presented and reward obtained. Additionally, we want to keep the information of the probability of the stimulus appearing in a given position since this changes within a session, and the session id to know when sessions start and end.
 
 <div class="render-users, render-presenter">
 We only need a subset of those columns, in particular we will work with:
@@ -832,7 +832,7 @@ In these sessions, the posterior over latent states can be tracked at each trial
 ### Understanding mouse behavior in different states
 
 
-We may also want to quantify state fractional occupancies (i.e. what proportion of the trials a given animal spent in each state) and accuracies per state. For this, we need the inferred sequence of states, this can be obtained using the Viterbi algorithm that you can run by calling the  ```decode_state``` method.
+We may also want to quantify state fractional occupancies (i.e. what proportion of the trials a given animal spent in each state) and the mouse's accuracy in each state (i.e. how often it chose the correct side). For this, we need the inferred sequence of states, this can be obtained using the [Viterbi algorithm](https://en.wikipedia.org/wiki/Viterbi_algorithm) that you can run by calling the  ```decode_state``` method.
 
 This method finds the single most likely sequence of hidden states that best explains the observed data: the state sequence that maximizes the joint probability of states and observations. It takes three mandatory parameters, a matrix of predictors `X` of shape `(n_timepoints,n_features)`, a `np.array` or `nap.Tsd` of observations of shape `(n_time_points,)`, and the format of the returned states, either in one-hot encoding format or as an array of shape `(n_time_points,)` containing the decoded state at each timepoint.
 
@@ -879,12 +879,12 @@ frac_occupancy_viterbi= np.nansum(decoded_states, axis=0) / valid.sum()
 print(f"Fraction of occupancy {frac_occupancy_viterbi} \n")
 ```
 
-Now we can compute the overall accuracy.
+Now we can compute the mouse's overall accuracy.
 
 <div class="render-presenter, render-user">
 
 - Compute the accuracy:
-  - Mask out the 0 contrast stimuli
+  - Mask out the 0 contrast stimuli (because there is no correct answer in that case)
   - `choice==0`: right choice, `choice==1`: left choice.
   - `signed_contrast < 0`: left stimulus presented, `signed_contrast > 0`: right stimulus presented.
   - Use convention above to get the accuracy.
