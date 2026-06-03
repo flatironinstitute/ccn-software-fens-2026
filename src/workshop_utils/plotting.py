@@ -962,8 +962,8 @@ def plot_glm_weights(model, n_states=3):
 
     state_labels = [
         'State 1: "engaged"',
-        'State 2: "biased left"',
-        'State 3: "biased right"',
+        'State 2: "biased right"',
+        'State 3: "biased left"',
     ]
 
     for state in range(n_states):
@@ -1066,12 +1066,23 @@ def plot_design_matrix(X, choices, valid_choices_idx, n_trials=20):
     matplotlib.figure.Figure
         The figure with the two heatmaps.
     """
-    fig, axes = plt.subplots(1, 2, figsize=(3.5, 8), sharey=True)
+    # width ratio 3:1 so the 3-column design matrix and 1-column choices end
+    # up with the same (square) cell size, hence the same height and alignment.
+    fig, axes = plt.subplots(
+        1,
+        2,
+        figsize=(4, 8),
+        sharey=True,
+        gridspec_kw={"width_ratios": [3, 1], "wspace": 0.9},
+    )
 
     # left → neutral → right
     cmap_cat = LinearSegmentedColormap.from_list(
         "bias_map", ["#377eb8", "white", "#4daf4a"]
     )
+
+    # dedicated colorbar axes so the colorbar doesn't distort the choices heatmap
+    cbar_ax = fig.add_axes([0.92, 0.3, 0.03, 0.4])
 
     # ---- heatmap 1: full design matrix ----
     sns.heatmap(
@@ -1082,6 +1093,8 @@ def plot_design_matrix(X, choices, valid_choices_idx, n_trials=20):
         cbar=False,
         vmin=-2.4,
         vmax=2.4,
+        linewidths=0.5,
+        linecolor="black",
     )
     axes[0].set_xticks(
         [0.5, 1.5, 2.5],
@@ -1094,18 +1107,47 @@ def plot_design_matrix(X, choices, valid_choices_idx, n_trials=20):
 
     # ---- heatmap 2: choices ----
     sns.heatmap(
-        choices[valid_choices_idx].to_numpy().reshape(-1, 1)[:n_trials],
+        choices[valid_choices_idx].reshape(-1, 1)[:n_trials],
         ax=axes[1],
         square=True,
         cmap=cmap_cat,
         cbar=True,
+        cbar_ax=cbar_ax,
         vmin=-2.4,
         vmax=2.4,
+        linewidths=0.5,
+        linecolor="black",
     )
-    axes[0].set_yticks([])
     axes[1].set_xticks([0.5], ["Choices"], rotation=90)
+    # the choices heatmap re-adds y-ticks via sharey; hide them again
+    axes[1].set_yticks([])
 
-    plt.tight_layout()
+    # seaborn hides the spines, so the outer cell borders look clipped; re-enable
+    # them to close the black grid around each heatmap
+    for ax in axes:
+        for spine in ax.spines.values():
+            spine.set_visible(True)
+            spine.set_linewidth(0.5)
+            spine.set_color("black")
+
+    # square=True shrinks the axes to fit; redraw so we read their true extents
+    fig.canvas.draw()
+    pos0 = axes[0].get_position()
+    pos1 = axes[1].get_position()
+
+    # match the colorbar height to the heatmaps
+    cbar_ax.set_position([0.92, pos1.y0, 0.03, pos1.height])
+
+    # read the two heatmaps as a matrix product: design x beta = observations
+    fig.text(
+        (pos0.x1 + pos1.x0) / 2,
+        (pos0.y0 + pos0.y1) / 2,
+        r"$\times\ \beta\ =$",
+        ha="center",
+        va="center",
+        fontsize=16,
+    )
+
     plt.show()
     return fig
 

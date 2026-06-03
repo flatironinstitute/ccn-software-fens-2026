@@ -491,20 +491,22 @@ X_unnormalized[:5,:]
 ```{code-cell} ipython3
 # Create an additive basis using our three components
 basis_object = (
-    # will process one input
-    stimuli_basis +  
-    # will process two inputs (choice & reward)                      
-    wsls_basis +                           
-    prev_choice_basis                       # will process one input
+    stimuli_basis +      # will process one input
+    wsls_basis +         # will process two inputs (choice & reward)
+    prev_choice_basis    # will process one input
 )
 
 # Compute features
 X_unnormalized = basis_object.compute_features(
-    signed_contrast[valid_choices_idx],     # input 1 : processed with stimuli_basis
-    choices[valid_choices_idx],             # input 2 : wsls input 1: choice
-    rewarded[valid_choices_idx],            # input 3 : wsls input 2: reward
-    choices[valid_choices_idx]              # input 4 : processed with prev_choice
-)        
+    # input 1 : processed with stimuli_basis
+    signed_contrast[valid_choices_idx],
+    # input 2 : wsls input 1: choice
+    choices[valid_choices_idx],
+    # input 3 : wsls input 2: reward
+    rewarded[valid_choices_idx],
+    # input 4 : processed with prev_choice
+    choices[valid_choices_idx],
+)
 
 X_unnormalized[:5,:]
 ```
@@ -620,7 +622,7 @@ The likelihood of a GLM-HMM is non-convex, so the EM algorithm used to fit it ca
 
 <div class="render-presenter, render-user">
 - Initialize the `GLMHMM` object with 3 states and `regularizer="Ridge"`.
-- Set seed for trying different initial parameters.
+- Set seed for trying different initial parameters (`jax.random.PRNGKey(number)`).
 - By default, the intercept is set to match the empirical choice probability, and the coefficients are set as random gaussian centered at zero with small standard deviation.
 </div>
 
@@ -639,7 +641,8 @@ n_states = 3
 model = nmo.glm_hmm.GLMHMM(
     n_states,
     regularizer="Ridge",
-    seed=123, # change this to try multiple init.
+    # change this to try multiple init
+    seed=jax.random.PRNGKey(12), 
 )
 
 model
