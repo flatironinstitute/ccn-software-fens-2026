@@ -319,7 +319,7 @@ Let's go through the process of building the design matrix.
 
 </div>
 
-<div class="render-user">
+<div class="render-user render-presenter">
 ```{code-cell} ipython3
 # Select the necessary columns (and reset_index + drop): 
 # choice, contrast of stimuli and reward
