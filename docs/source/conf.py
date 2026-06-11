@@ -44,6 +44,7 @@ html_sourcelink_suffix = ""
 myst_enable_extensions = ["colon_fence", "dollarmath", "attrs_inline"]
 html_theme_options = {
     "home_page_in_toc": True,
+    "show_toc_level": 3,
     "github_url": "https://github.com/flatironinstitute/ccn-software-fens-2026",
     "repository_url": "https://github.com/flatironinstitute/ccn-software-fens-2026",
     "logo": {
