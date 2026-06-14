@@ -55,33 +55,26 @@ And turn on `View > Render side-by-side` (shortcut `Shift+R`).
 
 In this notebook, we will learn how to model behavioral choices by fitting a GLM-HMM, replicating the main findings of Ashwood et al. (2022) <span id="cite1a"></span><a href="#ref1a">[1a]</a>.
 
-In particular, we will analyze the IBL decision-making task (IBL et al., 2021) <span id="cite2a"></span><a href="#ref2a">[2a]</a>, a variation of the two-alternative forced-choice perceptual detection task (Burgess et al., 2021 <span id="cite3a"></span><a href="#ref3a">[3a]</a>).
-
-During this task, a sinusoidal grating with varying contrast [0\%-100\%] appeared either at the right or left side of the screen. The mice indicated this side by turning a small wheel, which moved the stimulus toward the center of the screen (Burgess et al., 2021 <span id="cite3b"></span><a href="#ref3b">[3b]</a>). If the mice chose the side correctly, they would receive a water reward; if not, they would get a noise burst and a 1-second timeout. For the first 90 trials of each session, the stimulus appeared randomly on either side of the screen; after that, it appeared on one side with fixed probability 0.8, alternating randomly every 20–100 trials. 
-
 </div>
 
 ## Dataset
 
 <div class="render-all">
 Data for this notebook comes from the IBL decision-making task (IBL et al., 2021) <span id="cite2c"></span><a href="#ref2c">[2c]</a>, a variation of the two-alternative forced-choice perceptual detection task (Burgess et al., 2021 <span id="cite3c"></span><a href="#ref3c">[3c]</a>).
+
+During this task, a sinusoidal grating with varying contrast [0\%-100\%] appeared either at the right or left side of the screen. The mice indicated this side by turning a small wheel, which moved the stimulus toward the center of the screen (Burgess et al., 2021 <span id="cite3b"></span><a href="#ref3b">[3b]</a>). If the mice chose the side correctly, they would receive a water reward; if not, they would get a noise burst and a 1-second timeout. For the first 90 trials of each session, the stimulus appeared randomly on either side of the screen; after that, it appeared on one side with fixed probability 0.8, alternating randomly every 20–100 trials. 
+
 </div>
 
 
 <div class="render-all">
-
 
 ![Task illustration](../../_static/IBL_edited.png)
 
 *Task illustration. Modified from IBL et al. (2021)* <span id="cite2b"></span><a href="#ref2b">[2b]</a>.
 
-
 </div>
 
-<div class="render-all">
-Each stimulus is presented either to the left or to the right, with a probability that varies over time.
-
-</div>
 
 
 
@@ -216,7 +209,7 @@ trials_sess = trials[trials.session == sess_ex].reset_index()
 
 Now, we will restrict the analysis to the first 90 trials of each session to match the work of Ashwood et al. (2022) <span id="cite1b"></span><a href="#ref1b">[1b]</a>. In this segment, the stimulus appears on the left and right with equal probability (0.5/0.5), and thus choices should be driven primarily by sensory evidence rather than learned expectations about stimulus probability.
 
-<div class="render-user, render-presenter">
+<div class="render-all">
 
 To match Ashwood et al. (2022) <a href="#ref1b">[1b]</a>, we will focus our analysis on the first 90 trials, in which the stimulus appears on the left and right with equal probability (50-50).
 
@@ -240,7 +233,7 @@ In Ashwood et al. (2022) <span id="cite1c"></span><a href="#ref1c">[1c]</a>, onl
  1) Subset sessions which include 50-50 trials
  2) Exclude sessions with >10 violation trials
 
-<div class="render-user, render-presenter">
+<div class="render-all">
 Let's do some pandas wrangling to keep only the sessions that have:
 
 - Filter to sessions that went through all testing blocks (in particular all 50-50, 20-80 and 80-20 blocks). 
@@ -317,8 +310,9 @@ rewarded =
 
 </div>
 
-```{code-cell} ipython3
+<div class="render-presenter">
 
+```{code-cell} ipython3
 # We can select all the necessary values for the design matrix: 
 # choice, contrast of stimuli and reward
 choices = df_trials['choice'].values
@@ -327,6 +321,7 @@ stim_right = df_trials['contrastRight'].values
 rewarded = df_trials['feedbackType'].values
 session = df_trials['session'].values
 ```
+</div>
 
 For the first predictor: signed contrast.
 
@@ -337,7 +332,7 @@ For the first predictor: signed contrast.
 
 </div>
 
-<div class="render-user, render-presenter">
+<div class="render-user">
 
 ```{code-cell} ipython3
 # Replace nans with 0s
@@ -349,6 +344,8 @@ print(signed_contrast)
 ```
 
 </div>
+
+<div class="render-all">
 
 ```{code-cell} ipython3
 # Replace nans with 0s
@@ -363,6 +360,8 @@ select_session = df_trials["session"] == valid_sessions[0]
 signed_contrast[select_session]
 ```
 
+</div>
+
 <div class="render-presenter, render-user">
 
 - Get the index of the valid trials with `np.flatnonzero`
@@ -370,7 +369,7 @@ signed_contrast[select_session]
 </div>
 
 
-<div class="render-user, render-presenter">
+<div class="render-user">
 
 ```{code-cell} ipython3
 valid_choices_idx =
@@ -378,10 +377,13 @@ valid_choices_idx =
 
 </div>
 
+<div class=" render-presenter">
+
 ```{code-cell} ipython3
 valid_choices_idx = np.flatnonzero(choices != viol_val)
 ```
 
+</div>
 With those two elements we can compute our design matrix for this session, we can do this using nemos basis objects: 
 
 
@@ -445,7 +447,7 @@ However, we are still missing one predictor: win-stay lose-shift. This is an int
 
 </div>
 
-<div class="render-user, render-presenter">
+<div class="render-user">
 
 ```{code-cell} ipython3
 # Create lagged reward basis
@@ -480,7 +482,7 @@ Even though we need just a few lines of code, there is a lot going on. Here's a 
 
 </div>
 
-<div class="render-presenter, render-user">
+<div class="render-user">
 
 ```{code-cell} ipython3
 # Create an additive basis using our three components
@@ -525,7 +527,7 @@ As a last step, we normalize the signed-contrast predictor.
 
 </div>
 
-<div class="render-user, render-presenter">
+<div class="render-user">
 
 ```{code-cell} ipython3
 from scipy.stats import zscore
@@ -537,18 +539,29 @@ X[:, 0] =
 
 </div>
 
+<div class="render-presenter">
+
 ```{code-cell} ipython3
 # Copy the array (we'll need the un-normalized later)
 X = np.copy(X_unnormalized)
 ```
 
+</div>
+
+<div class="render-presenter">
+
 We z-score only the signed-contrast predictor (column 0), leaving the previous-choice and WSLS columns untouched since they are already on a unit scale. See the dropdown below for why this matters.
+</div>
+
+<div class="render-presenter">
 
 ```{code-cell} ipython3
 from scipy.stats import zscore
 # Apply z-scoring
 X[:, 0] = zscore(X[:, 0])
 ```
+
+</div>
 
 :::{admonition} Why do we normalize our stimuli predictor?
 :class: question render-all
@@ -585,7 +598,7 @@ We are going to fit a Bernoulli GLM-HMM to model binary choices. For this reason
 
 </div>
 
-<div class="render-user, render-presenter">
+<div class="render-user">
 
 ```{code-cell} ipython3
 choices = 
@@ -593,9 +606,13 @@ choices =
 
 </div>
 
+<div class="render-presenter">
+
 ```{code-cell} ipython3
 choices = np.where(choices == -1, 0, choices)
 ```
+
+</div>
 
 Importantly, we don't fit all 3000 trials as one continuous block. The data come as separate sessions of 100–300 trials, and we fit the model on all of them together. For our model to be accurate, we need to tell it when our session boundaries are: we don't want it to compute all sessions as if they were one. 
 
@@ -611,7 +628,7 @@ In NeMoS we have two ways of indicating the beginning of a new session. You can 
 
 </div>
 
-<div class="render-presenter, render-user">
+<div class="render-user">
 
 ```{code-cell} ipython3
 # Mark where session changes
@@ -620,10 +637,14 @@ new_sess_mouse =
 
 </div>
 
+<div class="render-presenter">
+
 ```{code-cell} ipython3
 # Mark where session changes
 new_sess_mouse = np.flatnonzero(session[1:] != session[:-1]) + 1
 ```
+
+</div>
 
 :::{admonition} How does this one-liner find the session starts?
 :class: note dropdown render-all
@@ -645,7 +666,7 @@ The likelihood of a GLM-HMM is non-convex, so the EM algorithm used to fit it ca
 </div>
 
 
-<div class="render-presenter, render-user">
+<div class="render-user">
 
 ```{code-cell} ipython3
 n_states = 3
@@ -654,6 +675,8 @@ model
 ```
 
 </div>
+
+<div class="render-presenter">
 
 ```{code-cell} ipython3
 n_states = 3
@@ -667,6 +690,9 @@ model = nmo.glm_hmm.GLMHMM(
 
 model
 ```
+
+</div>
+
 
 Once we created our object, we can fit our model. The fit function takes two mandatory arguments: the design matrix ```X``` we created above and the ```choices```. Additionally, we will also include ```new_sess_mouse```, the new session indicator.
 
@@ -789,7 +815,7 @@ To better understand the temporal structure of decision making behavior, we can 
 
 </div>
 
-<div class="render-presenter, render-user">
+<div class="render-user">
 
 ```{code-cell} ipython3
 # Compute smooth_proba
@@ -804,6 +830,9 @@ print(
 ```
 
 </div>
+
+<div class="render-presenter">
+
 
 ```{code-cell} ipython3
 # Compute smooth_proba
@@ -868,7 +897,7 @@ This method finds the single most likely sequence of hidden states that best exp
 
 </div>
 
-<div class="render-presenter, render-user">
+<div class="render-user">
 
 ```{code-cell} ipython3
 # get output of viterbi in one-hot encoding
@@ -877,6 +906,9 @@ decoded_states
 ```
 
 </div>
+
+
+<div class="render-presenter">
 
 ```{code-cell} ipython3
 # get output of viterbi in one-hot encoding
@@ -888,6 +920,8 @@ decoded_states = model.decode_state(
 )
 decoded_states
 ```
+
+</div>
 
 From this we can compute the fractional occupancy, while correctly filtering out the NaNs.
 
@@ -918,7 +952,7 @@ Now we can compute the mouse's overall accuracy.
 
 </div>
 
-<div class="render-presenter, render-user">
+<div class="render-user">
 
 ```{code-cell} ipython3
 # mask out the 0 contrast stimuli
@@ -933,6 +967,8 @@ accuracies_to_plot_viterbi[0] = total_accuracy
 ```
 
 </div>
+
+<div class="render-presenter">
 
 ```{code-cell} ipython3
 # mask out the 0 contrast stimuli
@@ -952,6 +988,8 @@ accuracies_to_plot_viterbi = np.zeros(4)
 accuracies_to_plot_viterbi[0] = total_accuracy
 ```
 
+</div>
+
 And then we can use our output of ```decode_state``` to segment the trials into the estimated states and compute the accuracy within each state.
 
 
@@ -961,7 +999,7 @@ And then we can use our output of ```decode_state``` to segment the trials into 
 
 </div>
 
-<div class="render-presenter, render-user">
+<div class="render-user">
 
 ```{code-cell} ipython3
 accuracy_per_state = np.zeros(n_states)
@@ -973,6 +1011,8 @@ accuracies_to_plot_viterbi[1:] = accuracy_per_state
 
 </div>
 
+<div class="render-presenter">
+
 ```{code-cell} ipython3
 accuracy_per_state = np.zeros(n_states)
 for s in range(n_states):
@@ -981,6 +1021,8 @@ for s in range(n_states):
 
 accuracies_to_plot_viterbi[1:] = accuracy_per_state
 ```
+
+</div>
 
 And we can plot this :)
 
