@@ -305,6 +305,7 @@ Let's go through the process of building the design matrix.
 </div>
 
 <div class="render-user">
+
 ```{code-cell} ipython3
 # Select the necessary columns (and reset_index + drop): 
 # choice, contrast of stimuli and reward
@@ -313,6 +314,7 @@ stim_left =
 stim_right = 
 rewarded = 
 ```
+
 </div>
 
 ```{code-cell} ipython3
@@ -336,6 +338,7 @@ For the first predictor: signed contrast.
 </div>
 
 <div class="render-user, render-presenter">
+
 ```{code-cell} ipython3
 # Replace nans with 0s
 stim_left = 
@@ -344,6 +347,7 @@ stim_right =
 signed_contrast = 
 print(signed_contrast)
 ```
+
 </div>
 
 ```{code-cell} ipython3
@@ -367,9 +371,11 @@ signed_contrast[select_session]
 
 
 <div class="render-user, render-presenter">
+
 ```{code-cell} ipython3
 valid_choices_idx =
 ```
+
 </div>
 
 ```{code-cell} ipython3
@@ -386,6 +392,7 @@ With those two elements we can compute our design matrix for this session, we ca
 It is very easy to declare our basis objects:
 
 <div class="render-user, render-presenter">
+
 Let's use the `basis` module from  NeMoS to define the design matrix. 
 
 What we need is:
@@ -395,10 +402,12 @@ What we need is:
 </div>
 
 <div class="render-user, render-presenter">
+
 ```{code-cell} ipython3
 # Prev history with history of 1
 prev_choice_basis = nmo.basis.HistoryConv(1)
 ```
+
 </div>
 
 ```{code-cell} ipython3
@@ -413,10 +422,12 @@ prev_choice_basis = nmo.basis.HistoryConv(1)
 </div>
 
 <div class="render-user, render-presenter">
+
 ```{code-cell} ipython3
 # Identity basis for stimuli
 stimuli_basis = nmo.basis.IdentityEval()
 ```
+
 </div>
 
 ```{code-cell} ipython3
@@ -435,12 +446,14 @@ However, we are still missing one predictor: win-stay lose-shift. This is an int
 </div>
 
 <div class="render-user, render-presenter">
+
 ```{code-cell} ipython3
 # Create lagged reward basis
 prev_reward_basis = 
 # Multiply lagged reward basis with the lagged choice basis
 wsls_basis = 
 ```
+
 </div>
 
 ```{code-cell} ipython3
@@ -468,6 +481,7 @@ Even though we need just a few lines of code, there is a lot going on. Here's a 
 </div>
 
 <div class="render-presenter, render-user">
+
 ```{code-cell} ipython3
 # Create an additive basis using our three components
 basis_object =
@@ -475,6 +489,7 @@ basis_object =
 X_unnormalized = 
 X_unnormalized[:5,:]
 ```
+
 </div>
 
 ```{code-cell} ipython3
@@ -505,10 +520,13 @@ And that's it! We have our unnormalized design matrix with signed contrast, win-
 As a last step, we normalize the signed-contrast predictor.
 
 <div class="render-presenter, render-user">
+
 - Z-score the contrast values.
+
 </div>
 
 <div class="render-user, render-presenter">
+
 ```{code-cell} ipython3
 from scipy.stats import zscore
 # Copy the array (we'll need the un-normalized later)
@@ -516,6 +534,7 @@ X = np.copy(X_unnormalized)
 # Apply z-scoring
 X[:, 0] = 
 ```
+
 </div>
 
 ```{code-cell} ipython3
@@ -560,14 +579,18 @@ workshop_utils.plot_design_matrix(X, choices, valid_choices_idx);
 We are going to fit a Bernoulli GLM-HMM to model binary choices. For this reason, we must convert choices from the original $\{-1, 1\}$ encoding to $\{0, 1\}$.
 
 <div class="render-presenter, render-user">
+
 - For a Bernoulli GLM-HMM, observations must take values of 0 or 1.
 - Convert choices to 0s and 1s. 1: Left and 0: Right. You can use `np.where`.
+
 </div>
 
 <div class="render-user, render-presenter">
+
 ```{code-cell} ipython3
 choices = 
 ```
+
 </div>
 
 ```{code-cell} ipython3
@@ -583,14 +606,18 @@ In NeMoS we have two ways of indicating the beginning of a new session. You can 
 - a pynapple.IntervalSet marking session epochs (requires either X or y to be a pynapple Tsd or TsdFrame to get timestamps)
 
 <div class="render-presenter, render-user">
+
 - Create a vector containing the indices of each session start.
+
 </div>
 
 <div class="render-presenter, render-user">
+
 ```{code-cell} ipython3
 # Mark where session changes
 new_sess_mouse = 
 ```
+
 </div>
 
 ```{code-cell} ipython3
@@ -610,18 +637,22 @@ The likelihood of a GLM-HMM is non-convex, so the EM algorithm used to fit it ca
 
 
 <div class="render-presenter, render-user">
+
 - Initialize the `GLMHMM` object with 3 states and `regularizer="Ridge"`.
 - Set seed for trying different initial parameters (`jax.random.PRNGKey(number)`).
 - By default, the intercept is set to match the empirical choice probability, and the coefficients are set as random gaussian centered at zero with small standard deviation.
+
 </div>
 
 
 <div class="render-presenter, render-user">
+
 ```{code-cell} ipython3
 n_states = 3
 model = nmo.glm_hmm.GLMHMM(
 model
 ```
+
 </div>
 
 ```{code-cell} ipython3
@@ -759,6 +790,7 @@ To better understand the temporal structure of decision making behavior, we can 
 </div>
 
 <div class="render-presenter, render-user">
+
 ```{code-cell} ipython3
 # Compute smooth_proba
 posteriors = 
@@ -770,6 +802,7 @@ print(
     np.allclose( , 1)
 )
 ```
+
 </div>
 
 ```{code-cell} ipython3
@@ -836,11 +869,13 @@ This method finds the single most likely sequence of hidden states that best exp
 </div>
 
 <div class="render-presenter, render-user">
+
 ```{code-cell} ipython3
 # get output of viterbi in one-hot encoding
 decoded_states = 
 decoded_states
 ```
+
 </div>
 
 ```{code-cell} ipython3
@@ -884,6 +919,7 @@ Now we can compute the mouse's overall accuracy.
 </div>
 
 <div class="render-presenter, render-user">
+
 ```{code-cell} ipython3
 # mask out the 0 contrast stimuli
 mask =
@@ -895,6 +931,7 @@ total_accuracy =
 accuracies_to_plot_viterbi = np.zeros(4)
 accuracies_to_plot_viterbi[0] = total_accuracy
 ```
+
 </div>
 
 ```{code-cell} ipython3
@@ -925,6 +962,7 @@ And then we can use our output of ```decode_state``` to segment the trials into 
 </div>
 
 <div class="render-presenter, render-user">
+
 ```{code-cell} ipython3
 accuracy_per_state = np.zeros(n_states)
 for s in range(n_states):
@@ -932,6 +970,7 @@ for s in range(n_states):
   accuracy_per_state[s] =
 accuracies_to_plot_viterbi[1:] = accuracy_per_state
 ```
+
 </div>
 
 ```{code-cell} ipython3
