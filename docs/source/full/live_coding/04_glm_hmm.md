@@ -84,18 +84,6 @@ Each stimulus is presented either to the left or to the right, with a probabilit
 </div>
 
 
-<div class="render-all">
-
-
-
-![Probability Left Stimulus](../../_static/prob_left.svg)
-
-*Probability of left stimulus presentation over trials.*
-
-
-</div>
-
-
 
 ## Data Streaming
 
@@ -246,8 +234,6 @@ plt.axvline(90, color="skyblue", linestyle="--")
 plt.ylabel("P(stimulus on the left)")
 plt.xlabel("Trial number")
 plt.show()
-
-#TODO: add dropdown with original figures.
 ```
 
 In Ashwood et al. (2022) <span id="cite1c"></span><a href="#ref1c">[1c]</a>, only sessions with fewer than 10 violations were used. To follow this work, we will now count the number of violations — trials where the animal made no choice (i.e. `choice == 0`) — during the 50-50 trials. For this, we will:
