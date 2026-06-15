@@ -953,7 +953,7 @@ def plot_glm_weights(model, n_states=3):
     # Change order of weights so output matches Ashwood et al. (2022) 2e plot
     recovered_weights = np.zeros((n_features, n_states))
     recovered_weights[0, :] = model.coef_[0, :]  # stimulus
-    recovered_weights[1, :] = model.intercept_  # bias
+    recovered_weights[1, :] = model.intercept_   # bias
     recovered_weights[2, :] = model.coef_[2, :]  # prev choice, wsls
     recovered_weights[3, :] = model.coef_[1, :]  # prev choice, wsls
 
@@ -962,8 +962,8 @@ def plot_glm_weights(model, n_states=3):
 
     state_labels = [
         'State 1: "engaged"',
-        'State 2: "biased right"',
-        'State 3: "biased left"',
+        'State 2: "biased left"',
+        'State 3: "biased right"',
     ]
 
     for state in range(n_states):
