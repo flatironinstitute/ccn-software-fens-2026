@@ -348,7 +348,6 @@ For the first predictor: signed contrast.
 
 </div>
 
-+++ 
 
 <div class="render-user">
 ```{code-cell} ipython3
