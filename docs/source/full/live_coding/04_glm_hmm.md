@@ -338,7 +338,10 @@ stim_left =
 stim_right = 
 # Compute the signed contrast (left - right)
 signed_contrast = 
-print(signed_contrast)
+
+# print the signed contrast for the first valid session
+select_session = df_trials["session"] == valid_sessions[0]
+signed_contrast[select_session]
 ```
 
 </div>
@@ -353,7 +356,7 @@ stim_right = np.nan_to_num(stim_right, nan=0)
 # Compute the signed contrast
 signed_contrast = stim_left - stim_right
 
-# print the design for the first valid session
+# print the signed contrast for the first valid session
 select_session = df_trials["session"] == valid_sessions[0]
 signed_contrast[select_session]
 ```
@@ -380,17 +383,20 @@ valid_choices_idx =
 ```{code-cell} ipython3
 valid_choices_idx = np.flatnonzero(choices != viol_val)
 ```
+</div>
 
 ### NeMoS basis objects of interest
 
-</div>
+
+<div class="render-user, render-presenter">
+
 With those two elements we can compute our design matrix for this session, we can do this using nemos basis objects: 
 
 - ```IdentityEval``` uses the samples themselves as predictors; its purpose is simply to wrap them as a NeMoS object. We use this for the stimuli predictor. 
 
 - ```HistoryConv``` includes the past values of a sample as predictors (raw history). You choose how far back to go; here we only need one trial in the past. We use this to create the previous-choice predictor.
 
-
+</div>
 ### Predictor 1: stimulus contrast
 
 <div class="render-user, render-presenter">
@@ -484,6 +490,9 @@ wsls_basis = prev_choice_basis*prev_reward_basis
 <div class="render-user, render-presenter">
 
 Now that we have all our bases, we can combine them into an additive basis and apply the transformation to the input data using ```compute_features```. This method is a high-level interface for transforming input data with the basis functions. 
+</div>
+
+<div class="render-user">
 
 Even though we need just a few lines of code, there is a lot going on. Here's a breakdown of what is happening:
 1. We will create an additive basis ```basis_object``` with our bases ```stimuli_basis```, ```wsls_basis``` and ```prev_choice_basis```. 
@@ -594,7 +603,10 @@ X[:, 0] = zscore(X[:, 0])
 
 <div class="render-presenter">
 
-We z-score only the signed-contrast predictor (column 0), leaving the previous-choice and WSLS columns untouched since they are already on a unit scale. See the dropdown below for why this matters.
+We z-score only the signed-contrast predictor (column 0), leaving the previous-choice and WSLS columns untouched since they are already on a unit scale. 
+
+Previous choice and WSLS are already on the same scale (−1 or +1), so their weights are directly comparable. Signed contrast is continuous and usually smaller in magnitude, which can inflate its fitted weight simply because of its numerical scale. Normalizing signed contrast (mean 0, SD 1) removes this scale artifact, making GLM weights more comparable across predictors.
+
 </div>
 
 <div class="render-presenter">
@@ -606,7 +618,7 @@ We z-score only the signed-contrast predictor (column 0), leaving the previous-c
 </div>
 
 :::{admonition} Why do we normalize our stimuli predictor?
-:class: question render-all
+:class: question render-user
 :class: dropdown
 
 When fitting a GLM-HMM, we are fitting a separate weight for each feature. However, if the features are on different numerical scales for reasons that are not related to the actual influence of each predictor, that renders the weights incomparable. Here we have three predictors:  
@@ -679,6 +691,12 @@ new_sess_mouse =
 
 <div class="render-presenter">
 
+Each trial has a session ID. By comparing each session ID to the previous one, we detect where the ID changes. Those change points mark the start of a new session. np.flatnonzero returns their indices, and +1 corrects for the one-step shift introduced by the comparison.
+
+</div>
+
+<div class="render-presenter">
+
 ```{code-cell} ipython3
 # Mark where session changes
 new_sess_mouse = np.flatnonzero(session[1:] != session[:-1]) + 1
@@ -687,7 +705,7 @@ new_sess_mouse = np.flatnonzero(session[1:] != session[:-1]) + 1
 </div>
 
 :::{admonition} How does this one-liner find the session starts?
-:class: note dropdown render-all
+:class: note dropdown render-user
 
 `session` holds one session id per trial. Comparing `session[1:]` (every trial but the first) with `session[:-1]` (every trial but the last) yields a boolean array that is `True` wherever a trial's session id differs from the previous trial's — that is, exactly at the session boundaries. `np.flatnonzero` returns the indices where this is `True`, and we add `1` because the comparison is shifted by one (position `i` in the comparison corresponds to trial `i+1`). The result is the array of indices at which a new session begins.
 :::
