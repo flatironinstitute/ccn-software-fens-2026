@@ -1189,7 +1189,7 @@ According to state occupancy derived with the Viterbi algorithm, this mouse spen
 3. Used `smooth_proba` to compute posterior state probabilities and examine the temporal structure of behavior.
 4. Used `decode_state` to infer the most likely state sequence for each trial.
 5. Computed summary statistics from the decoded states, including fractional occupancy and accuracy per state.
-
+:::
 
 ## Conclusion
 <div class="render-all">
