@@ -824,7 +824,7 @@ That's all it takes!
 3. Identified the session boundaries and created the session-start vector required for fitting.
 4. Instantiated a `GLMHMM` object and fit the model using `nmo.fit()`.
 5. Ended with a fitted GLM-HMM ready for inspection and analysis.
-
+:::
 
 ## 04. Interpreting the results
 
