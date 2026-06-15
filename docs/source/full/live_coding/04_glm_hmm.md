@@ -351,6 +351,7 @@ For the first predictor: signed contrast.
 <div class="render-user">
 
 ```{code-cell} ipython3
+:tags: [render-user]
 # Replace nans with 0s
 stim_left = 
 stim_right = 
@@ -953,7 +954,6 @@ print(
 
 <div class="render-presenter">
 
-
 ```{code-cell} ipython3
 # Compute smooth_proba
 posteriors = model.smooth_proba(
@@ -1026,6 +1026,7 @@ This method finds the single most likely sequence of hidden states that best exp
 <div class="render-user">
 
 ```{code-cell} ipython3
+:tags: [render-user]
 # get output of viterbi in one-hot encoding
 decoded_states = 
 decoded_states
@@ -1037,6 +1038,7 @@ decoded_states
 <div class="render-presenter">
 
 ```{code-cell} ipython3
+:tags: [render-presenter]
 # get output of viterbi in one-hot encoding
 decoded_states = model.decode_state(
     X,
@@ -1059,6 +1061,7 @@ From this we can compute the fractional occupancy, while correctly filtering out
 </div>
 
 ```{code-cell} ipython3
+:tags: [render-all]
 
 # calculate occupancy
 valid = np.all(~np.isnan(decoded_states), axis=1)
@@ -1081,15 +1084,24 @@ Now we can compute the mouse's overall accuracy.
 <div class="render-user">
 
 ```{code-cell} ipython3
+:tags: [render-user]
+
 # mask out the 0 contrast stimuli
-mask =
-# compute stimulus and chocie side applying the mask
-stim_side =
-# compute the accuracy
+mask = 
+
+# compute stimulus and choice side
+stim_side = 
+
+# get the correct choices boolean
+correct_choices = 
+
+# compute the total accuracy applying the mask
 total_accuracy = 
+
 # store in an array of dim 4
 accuracies_to_plot_viterbi = np.zeros(4)
 accuracies_to_plot_viterbi[0] = total_accuracy
+
 ```
 
 </div>
@@ -1179,6 +1191,17 @@ According to state occupancy derived with the Viterbi algorithm, this mouse spen
 5. Computed summary statistics from the decoded states, including fractional occupancy and accuracy per state.
 
 
+## Conclusion
+<div class="render-all">
+
+1. A GLM-HMM combines a GLM (how predictors influence choices) with an HMM (how latent behavioral states evolve over time).
+2. We transformed raw behavioral data into a design matrix containing sensory evidence, previous choice, and WSLS.
+3. We fit a 3-state GLM-HMM across multiple sessions while explicitly accounting for session boundaries.
+4. The GLM weights showed distinct decision-making strategies, while the transition matrix quantified how stable those strategies were over time.
+5. Using smooth_proba and decode_state, we linked latent states back to behavior, allowing us to identify when different strategies were used and how they affected performance.
+
+</div>
+
 ## Additional exercises
 
 <div class="render-all">
@@ -1191,16 +1214,6 @@ According to state occupancy derived with the Viterbi algorithm, this mouse spen
 
 </div>
 
-## Conclusion
-<div class="render-all">
-
-1. A GLM-HMM combines a GLM (how predictors influence choices) with an HMM (how latent behavioral states evolve over time).
-2. We transformed raw behavioral data into a design matrix containing sensory evidence, previous choice, and WSLS.
-3. We fit a 3-state GLM-HMM across multiple sessions while explicitly accounting for session boundaries.
-4. The GLM weights showed distinct decision-making strategies, while the transition matrix quantified how stable those strategies were over time.
-5. Using smooth_proba and decode_state, we linked latent states back to behavior, allowing us to identify when different strategies were used and how they affected performance.
-
-</div>
 
 ## Additional resources
 
