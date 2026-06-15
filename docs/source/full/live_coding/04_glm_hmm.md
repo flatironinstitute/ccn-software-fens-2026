@@ -53,11 +53,13 @@ And turn on `View > Render side-by-side` (shortcut `Shift+R`).
 
 <div class="render-all">
 
-In this notebook, we will learn how to model behavioral choices by fitting a GLM-HMM, replicating the main findings of Ashwood et al. (2022) <span id="cite1a"></span><a href="#ref1a">[1a]</a>.
+In this notebook, we will learn how to model behavioral choices by fitting a GLM-HMM, replicating the main findings of Ashwood et al. (2022) <span id="cite1a"></span><a href="#ref1a">[1a]</a>. We will do this in four steps: download and preprocess the data, build a design matrix with three predictors, fit the model and interpret the results.
 
 </div>
 
-## Dataset
+## 01. Download and preprocessing of data
+
+### Dataset
 
 <div class="render-all">
 Data for this notebook comes from the IBL decision-making task (IBL et al., 2021) <span id="cite2c"></span><a href="#ref2c">[2c]</a>, a variation of the two-alternative forced-choice perceptual detection task (Burgess et al., 2021 <span id="cite3c"></span><a href="#ref3c">[3c]</a>).
@@ -78,7 +80,7 @@ During this task, a sinusoidal grating with varying contrast [0\%-100\%] appeare
 
 
 
-## Data Streaming
+### Data Streaming
 
 <div class="render-all">
 First, let's download the data using  <a href="https://docs.internationalbrainlab.org/notebooks_external/one_quickstart.html">Open Neurophysiology Environment (ONE)</a>
@@ -159,10 +161,9 @@ We only need a subset of those columns, in particular we will work with:
 </table>
 
 
-Let's extract what we need,
+Let's extract what we need, and inspect its contents.
 
 </div>
-
 
 ```{code-cell} ipython3
 :tags: [render-all]
@@ -173,14 +174,6 @@ trials = trials[
         "feedbackType", "probabilityLeft", "session"
     ]
 ]
-
-```
-<div class="render-all">
-and inspect its contents.
-</div>
-
-```{code-cell} ipython3
-:tags: [render-all]
 
 print(f"choice \nvalues: {np.sort(trials.choice.unique())}, data type: {trials.choice.dtype}, shape:  \n")
 print(f"contrast left \nvalues: {np.sort(trials.contrastLeft.unique())}, data type: {trials.contrastLeft.dtype} \n")
@@ -193,6 +186,8 @@ print(f"probability of stimulus on left \nvalues: {np.sort(trials.probabilityLef
 
 print(f"session \n(some) values: {trials.session.unique()[:5]}, data type: {trials.session.dtype}\n")
 ```
+
+</div>
 
 <div class="render-all">
 Finally, let's focus our analysis on one example session.
@@ -255,7 +250,7 @@ has_three_blocks = (
           .agg(lambda s: set(s.unique()) == {0.2, 0.5, 0.8})
 )
 
-# Boolean mask selecing sessions with < 10 invalid trials in the 50-50 block
+# Boolean mask selecting sessions with < 10 invalid trials in the 50-50 block
 violations = (
     trials.query("probabilityLeft == 0.5")
           .groupby("session")["choice"]
@@ -272,7 +267,7 @@ df_trials = trials.query("session in @valid_sessions and probabilityLeft == 0.5"
 print(f"# of sessions after restrictions {df_trials['session'].nunique()}")
 ```
 
-## Design matrix
+## 02. Building the design matrix
 
 <div class="render-all">
 Now, with the valid sessions, we can compute the design matrix. In our case, we are interested in building a design matrix with three predictors: signed contrast, previous choice and win stay lose shift.
@@ -323,6 +318,8 @@ session = df_trials['session'].values
 ```
 </div>
 
+### Preparation: get signed contrast 1d vector and subset valid sessions
+
 For the first predictor: signed contrast.
 
 <div class="render-presenter, render-user">
@@ -345,7 +342,7 @@ print(signed_contrast)
 
 </div>
 
-<div class="render-all">
+<div class="render-presenter">
 
 ```{code-cell} ipython3
 # Replace nans with 0s
@@ -383,39 +380,17 @@ valid_choices_idx =
 valid_choices_idx = np.flatnonzero(choices != viol_val)
 ```
 
+### NeMoS basis objects of interest
+
 </div>
 With those two elements we can compute our design matrix for this session, we can do this using nemos basis objects: 
 
+- ```IdentityEval``` uses the samples themselves as predictors; its purpose is simply to wrap them as a NeMoS object. We use this for the stimuli predictor. 
 
 - ```HistoryConv``` includes the past values of a sample as predictors (raw history). You choose how far back to go; here we only need one trial in the past. We use this to create the previous-choice predictor.
 
-- ```IdentityEval``` uses the samples themselves as predictors; its purpose is simply to wrap them as a NeMoS object. We use this for the stimuli predictor. 
 
-It is very easy to declare our basis objects:
-
-<div class="render-user, render-presenter">
-
-Let's use the `basis` module from  NeMoS to define the design matrix. 
-
-What we need is:
-
-- A `HistoryConv` basis to capture the choice history. We need a `window_size=1` to include the previous 1 choice as predictor.
-
-</div>
-
-<div class="render-user, render-presenter">
-
-```{code-cell} ipython3
-# Prev history with history of 1
-prev_choice_basis = nmo.basis.HistoryConv(1)
-```
-
-</div>
-
-```{code-cell} ipython3
-# Prev history with history of 1
-prev_choice_basis = nmo.basis.HistoryConv(1)
-```
+### Predictor 1: stimulus contrast
 
 <div class="render-user, render-presenter">
 
@@ -423,7 +398,16 @@ prev_choice_basis = nmo.basis.HistoryConv(1)
 
 </div>
 
-<div class="render-user, render-presenter">
+<div class="render-user">
+
+```{code-cell} ipython3
+# Identity basis for stimuli
+stimuli_basis = 
+```
+
+</div>
+
+<div class="render-presenter">
 
 ```{code-cell} ipython3
 # Identity basis for stimuli
@@ -432,15 +416,39 @@ stimuli_basis = nmo.basis.IdentityEval()
 
 </div>
 
-```{code-cell} ipython3
-# Identity basis for stimuli
-stimuli_basis = nmo.basis.IdentityEval()
-```
-
-However, we are still missing one predictor: win-stay lose-shift. This is an interaction of previous choice with previous reward. To capture interaction between variables, we can use a [multiplicative basis object](https://nemos.readthedocs.io/en/latest/background/basis/plot_02_ND_basis_function.html#n-dimensional-basis), which takes the outer product of the elements that compose it.
+### Predictor 2: previous choice
 
 <div class="render-user, render-presenter">
 
+What we need is:
+
+- A `HistoryConv` basis to capture the choice history. We need a `window_size=1` to include the previous 1 choice as predictor.
+
+</div>
+
+<div class="render-user">
+
+```{code-cell} ipython3
+# Prev history with history of 1
+prev_choice_basis = 
+```
+
+</div>
+
+<div class="render-presenter">
+
+```{code-cell} ipython3
+# Prev history with history of 1
+prev_choice_basis = nmo.basis.HistoryConv(1)
+```
+
+</div>
+
+### Predictor 3: WSLS
+
+<div class="render-user, render-presenter">
+
+This is an interaction of previous choice with previous reward. To capture interaction between variables, we can use a [multiplicative basis object](https://nemos.readthedocs.io/en/latest/background/basis/plot_02_ND_basis_function.html#n-dimensional-basis), which takes the outer product of the elements that compose it.
 
 - Win-stay lose-shift is the product of previous choice and previous reward, $WSLS_t = c_{t-1} \cdot r_{t-1}$.
 - We can use [basis multiplication](https://nemos.readthedocs.io/en/latest/background/basis/plot_02_ND_basis_function.html#n-dimensional-basis) to construct that predictor. 
@@ -458,6 +466,9 @@ wsls_basis =
 
 </div>
 
+<div class="render-presenter">
+
+
 ```{code-cell} ipython3
 # Create lagged reward basis
 prev_reward_basis = nmo.basis.HistoryConv(1)
@@ -465,6 +476,11 @@ prev_reward_basis = nmo.basis.HistoryConv(1)
 # Multiply lagged reward basis with the lagged choice basis
 wsls_basis = prev_choice_basis*prev_reward_basis
 ```
+</div>
+
+### Combining features and computing them
+
+<div class="render-user, render-presenter">
 
 Now that we have all our bases, we can combine them into an additive basis and apply the transformation to the input data using ```compute_features```. This method is a high-level interface for transforming input data with the basis functions. 
 
@@ -473,9 +489,9 @@ Even though we need just a few lines of code, there is a lot going on. Here's a 
 2. ```wsls_basis``` is a multiplicative basis that takes two inputs.
 3. We will compute the features for our ```basis_object``` using ```compute_features```. Since the bases in our composite basis take a total of 4 inputs (```stimuli_basis``` takes 1 input, ```wsls_basis``` takes 2 inputs and ```prev_choice_basis``` takes 1 input), we need to pass 4 features to ```compute_features```.
 
+</div>
 
 <div class="render-user, render-presenter">
-
 
 - Use [basis addition](https://nemos.readthedocs.io/en/latest/background/basis/plot_02_ND_basis_function.html#additive-basis-object) to define a basis which concatenates predictor.
 - Create the design matrix by calling `compute_features`. Select the valid trials by applying the `valid_choices_idx` boolean mask.
@@ -487,6 +503,29 @@ Even though we need just a few lines of code, there is a lot going on. Here's a 
 ```{code-cell} ipython3
 # Create an additive basis using our three components
 basis_object =
+```
+
+</div>
+
+<div class="render-presenter">
+
+```{code-cell} ipython3
+# Create an additive basis using our three components
+basis_object = (
+    # will process one input
+    stimuli_basis +      
+    # will process two inputs (choice & reward)
+    wsls_basis +    
+    # will process one input     
+    prev_choice_basis    
+)
+```
+
+</div>
+
+<div class="render-user">
+
+```{code-cell} ipython3
 # Call compute features to get the raw model design
 X_unnormalized = 
 X_unnormalized[:5,:]
@@ -494,14 +533,9 @@ X_unnormalized[:5,:]
 
 </div>
 
-```{code-cell} ipython3
-# Create an additive basis using our three components
-basis_object = (
-    stimuli_basis +      # will process one input
-    wsls_basis +         # will process two inputs (choice & reward)
-    prev_choice_basis    # will process one input
-)
+<div class="render-presenter">
 
+```{code-cell} ipython3
 # Compute features
 X_unnormalized = basis_object.compute_features(
     # input 1 : processed with stimuli_basis
@@ -517,11 +551,13 @@ X_unnormalized = basis_object.compute_features(
 X_unnormalized[:5,:]
 ```
 
+</div>
+
 And that's it! We have our unnormalized design matrix with signed contrast, win-stay lose-shift and previous choice as predictors.
 
-As a last step, we normalize the signed-contrast predictor.
-
 <div class="render-presenter, render-user">
+
+As a last step, we normalize the signed-contrast predictor.
 
 - Z-score the contrast values.
 
@@ -531,8 +567,10 @@ As a last step, we normalize the signed-contrast predictor.
 
 ```{code-cell} ipython3
 from scipy.stats import zscore
+
 # Copy the array (we'll need the un-normalized later)
 X = np.copy(X_unnormalized)
+
 # Apply z-scoring
 X[:, 0] = 
 ```
@@ -542,8 +580,13 @@ X[:, 0] =
 <div class="render-presenter">
 
 ```{code-cell} ipython3
+from scipy.stats import zscore
+
 # Copy the array (we'll need the un-normalized later)
 X = np.copy(X_unnormalized)
+
+# Apply z-scoring
+X[:, 0] = zscore(X[:, 0])
 ```
 
 </div>
@@ -556,9 +599,7 @@ We z-score only the signed-contrast predictor (column 0), leaving the previous-c
 <div class="render-presenter">
 
 ```{code-cell} ipython3
-from scipy.stats import zscore
-# Apply z-scoring
-X[:, 0] = zscore(X[:, 0])
+
 ```
 
 </div>
@@ -576,9 +617,7 @@ Because the contrast values are typically much smaller in magnitude than ±1, th
 By normalizing, we rescale the predictor to have mean 0 and standard deviation 1. Previous choice and WSLS are already on a unit scale by construction — their values are symmetric around zero and their spread is naturally 1. This is why we only normalize signed contrast.
 :::
 
-+++
-
-and see our design matrix.
+We can see our design matrix now!
 
 ```{code-cell} ipython3
 :tags: [render-all]
@@ -587,7 +626,7 @@ and see our design matrix.
 workshop_utils.plot_design_matrix(X, choices, valid_choices_idx);
 ```
 
-## Model fitting
+## 03. Model fitting
 
 We are going to fit a Bernoulli GLM-HMM to model binary choices. For this reason, we must convert choices from the original $\{-1, 1\}$ encoding to $\{0, 1\}$.
 
@@ -714,7 +753,7 @@ model.fit(
 That's all it takes!
 
 
-## Results interpretation
+## 04. Interpreting the results
 
 ### How to visualize the fitted parameters
 
@@ -851,7 +890,13 @@ print(
 )
 ```
 
+</div>
+
+<div class="render-presenter
+
 The first trial of each session is `NaN`: the posterior depends on the transition from the previous trial's state, which doesn't exist at a session start. Hence we mask out the NaNs before checking that the rows sum to one.
+
+</div>
 
 <div class="render-all">
 Let's plot the first 90 trials, corresponding to the first session.
@@ -1043,7 +1088,7 @@ workshop_utils.plot_accuracy_and_occupancy(
 
 According to state occupancy derived with the Viterbi algorithm, this mouse spent the majority of the trials (70%) in the engaged state and a lesser portion of trials in the other two states (30%). We can see that even though this mouse had an overall accuracy of 80.36%, it achieved a higher accuracy of 87.04% in the "engaged" state compared to 66.03% and 63.03% in the "bias left" and "bias right", respectively.
 
-## Additional Exercises
+## Additional exercises
 
 <div class="render-all">
 
