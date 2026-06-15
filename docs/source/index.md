@@ -186,7 +186,7 @@ On the day of the workshop, we will run through the notebooks in the order they'
 :sync: uv
 
 ```shell
-cd path/to/ccn-software-fens-2026/notebooks
+cd path/to/ccn-software-fens-2026
 uv run jupyter lab
 ```
 
@@ -196,7 +196,7 @@ uv run jupyter lab
 :sync: conda
 
 ```shell
-cd path/to/ccn-software-fens-2026/notebooks
+cd path/to/ccn-software-fens-2026
 conda activate ccn-fens26
 jupyter lab
 ```
