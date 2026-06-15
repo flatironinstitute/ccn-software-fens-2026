@@ -287,7 +287,7 @@ print(f"# of sessions after restrictions {df_trials['session'].nunique()}")
 
 ## 02. Building the design matrix
 
-:::{admonition} What will we do?
+:::{admonition} What do we want to do?
 :class: note render-all
 
 1. Define the predictors: signed contrast, previous choice, and WSLS.
@@ -678,7 +678,7 @@ workshop_utils.plot_design_matrix(X, choices, valid_choices_idx);
 
 ## 03. Model fitting
 
-:::{admonition} What will we do?
+:::{admonition} What do we want to do?
 :class: note render-all
 
 1. Convert choices so we can model them with a Bernoulli GLM-HMM
@@ -828,7 +828,7 @@ That's all it takes!
 
 ## 04. Interpreting the results
 
-:::{admonition} What did we do?
+:::{admonition} What do we want to do?
 :class: note render-all
 
 1. Inspect the output of the model
