@@ -348,24 +348,21 @@ For the first predictor: signed contrast.
 
 </div>
 
-<div class="render-user">
++++ 
 
+<div class="render-user">
 ```{code-cell} ipython3
-:tags: [render-user]
 # Replace nans with 0s
 stim_left = 
 stim_right = 
 # Compute the signed contrast (left - right)
-signed_contrast = 
-
+signed_contrast =
 # print the signed contrast for the first valid session
 select_session = df_trials["session"] == valid_sessions[0]
 signed_contrast[select_session]
 ```
-
 </div>
 
-<div class="render-presenter">
 
 ```{code-cell} ipython3
 # Replace nans with 0s
@@ -380,7 +377,6 @@ select_session = df_trials["session"] == valid_sessions[0]
 signed_contrast[select_session]
 ```
 
-</div>
 
 <div class="render-presenter, render-user">
 
@@ -389,12 +385,12 @@ signed_contrast[select_session]
 </div>
 
 
-<div class="render-presenter, render-user">
-
 ```{code-cell} ipython3
+:tags: [render-all]
+
 valid_choices_idx = np.flatnonzero(choices != viol_val)
 ```
-</div>
+
 
 ### NeMoS basis objects of interest
 
@@ -417,22 +413,16 @@ With those two elements we can compute our design matrix for this session, we ca
 </div>
 
 <div class="render-user">
-
 ```{code-cell} ipython3
 # Identity basis for stimuli
 stimuli_basis = 
 ```
-
 </div>
-
-<div class="render-presenter">
 
 ```{code-cell} ipython3
 # Identity basis for stimuli
 stimuli_basis = nmo.basis.IdentityEval()
 ```
-
-</div>
 
 ### Predictor 2: previous choice
 
@@ -445,12 +435,10 @@ What we need is:
 </div>
 
 <div class="render-user">
-
 ```{code-cell} ipython3
 # Prev history with history of 1
 prev_choice_basis = 
 ```
-
 </div>
 
 <div class="render-presenter">
@@ -474,27 +462,22 @@ This is an interaction of previous choice with previous reward. To capture inter
 </div>
 
 <div class="render-user">
-
 ```{code-cell} ipython3
 # Create lagged reward basis
 prev_reward_basis = 
 # Multiply lagged reward basis with the lagged choice basis
 wsls_basis = 
 ```
-
 </div>
 
-<div class="render-presenter">
-
-
 ```{code-cell} ipython3
+
 # Create lagged reward basis
 prev_reward_basis = nmo.basis.HistoryConv(1)
-
 # Multiply lagged reward basis with the lagged choice basis
 wsls_basis = prev_choice_basis*prev_reward_basis
 ```
-</div>
+
 
 ### Combining features and computing them
 
@@ -520,22 +503,16 @@ Even though we need just a few lines of code, there is a lot going on. Here's a 
 </div>
 
 <div class="render-user">
-
 ```{code-cell} ipython3
 # Create an additive basis using our three components
 basis_object = (
     # will process one input
- 
     # will process two inputs (choice & reward)
-  
-    # will process one input     
- 
+    # will process one input
 )
 ```
-
 </div>
 
-<div class="render-presenter">
 
 ```{code-cell} ipython3
 # Create an additive basis using our three components
@@ -549,28 +526,20 @@ basis_object = (
 )
 ```
 
-</div>
 
 <div class="render-user">
-
 ```{code-cell} ipython3
 # Call compute features to get the raw model design
 X_unnormalized = basis_object.compute_features(
     # input 1 : processed with stimuli_basis
-
     # input 2 : wsls input 1: choice
-
     # input 3 : wsls input 2: reward
-
     # input 4 : processed with prev_choice
-
 )
 X_unnormalized[:5,:]
 ```
-
 </div>
 
-<div class="render-presenter">
 
 ```{code-cell} ipython3
 # Compute features
@@ -588,7 +557,6 @@ X_unnormalized = basis_object.compute_features(
 X_unnormalized[:5,:]
 ```
 
-</div>
 
 And that's it! We have our unnormalized design matrix with signed contrast, win-stay lose-shift and previous choice as predictors.
 
@@ -601,29 +569,15 @@ As a last step, we normalize the signed-contrast predictor.
 </div>
 
 <div class="render-user">
-
 ```{code-cell} ipython3
 from scipy.stats import zscore
-
 # Copy the array (we'll need the un-normalized later)
 X = np.copy(X_unnormalized)
-
 # Apply z-scoring
 X[:, 0] = 
 ```
-
 </div>
 
-
-<div class="render-presenter">
-
-We z-score only the signed-contrast predictor (column 0), leaving the previous-choice and WSLS columns untouched since they are already on a unit scale. 
-
-Previous choice and WSLS are already on the same scale (−1 or +1), so their weights are directly comparable. Signed contrast is continuous and usually smaller in magnitude, which can inflate its fitted weight simply because of its numerical scale. Normalizing signed contrast (mean 0, SD 1) removes this scale artifact, making GLM weights more comparable across predictors.
-
-</div>
-
-<div class="render-presenter">
 
 ```{code-cell} ipython3
 from scipy.stats import zscore
@@ -635,8 +589,13 @@ X = np.copy(X_unnormalized)
 X[:, 0] = zscore(X[:, 0])
 ```
 
-</div>
+<div class="render-presenter">
 
+We z-score only the signed-contrast predictor (column 0), leaving the previous-choice and WSLS columns untouched since they are already on a unit scale. 
+
+Previous choice and WSLS are already on the same scale (−1 or +1), so their weights are directly comparable. Signed contrast is continuous and usually smaller in magnitude, which can inflate its fitted weight simply because of its numerical scale. Normalizing signed contrast (mean 0, SD 1) removes this scale artifact, making GLM weights more comparable across predictors.
+
+</div>
 
 
 :::{admonition} Why do we normalize our stimuli predictor?
@@ -696,20 +655,16 @@ We are going to fit a Bernoulli GLM-HMM to model binary choices. For this reason
 </div>
 
 <div class="render-user">
-
 ```{code-cell} ipython3
 choices = 
 ```
-
 </div>
 
-<div class="render-presenter">
 
 ```{code-cell} ipython3
 choices = np.where(choices == -1, 0, choices)
 ```
 
-</div>
 
 Importantly, we don't fit all 3000 trials as one continuous block. The data come as separate sessions of 100–300 trials, and we fit the model on all of them together. For our model to be accurate, we need to tell it when our session boundaries are: we don't want it to compute all sessions as if they were one. 
 
@@ -726,13 +681,16 @@ In NeMoS we have two ways of indicating the beginning of a new session. You can 
 </div>
 
 <div class="render-user">
-
 ```{code-cell} ipython3
 # Mark where session changes
 new_sess_mouse = 
 ```
-
 </div>
+
+```{code-cell} ipython3
+# Mark where session changes
+new_sess_mouse = np.flatnonzero(session[1:] != session[:-1]) + 1
+```
 
 <div class="render-presenter">
 
@@ -740,14 +698,6 @@ Each trial has a session ID. By comparing each session ID to the previous one, w
 
 </div>
 
-<div class="render-presenter">
-
-```{code-cell} ipython3
-# Mark where session changes
-new_sess_mouse = np.flatnonzero(session[1:] != session[:-1]) + 1
-```
-
-</div>
 
 :::{admonition} How does this one-liner find the session starts?
 :class: note dropdown render-user
@@ -770,16 +720,12 @@ The likelihood of a GLM-HMM is non-convex, so the EM algorithm used to fit it ca
 
 
 <div class="render-user">
-
 ```{code-cell} ipython3
 n_states = 3
 model = nmo.glm_hmm.GLMHMM(
 model
 ```
-
 </div>
-
-<div class="render-presenter">
 
 ```{code-cell} ipython3
 n_states = 3
@@ -793,9 +739,6 @@ model = nmo.glm_hmm.GLMHMM(
 
 model
 ```
-
-</div>
-
 
 Once we created our object, we can fit our model. The fit function takes two mandatory arguments: the design matrix ```X``` we created above and the ```choices```. Additionally, we will also include ```new_sess_mouse```, the new session indicator.
 
@@ -848,10 +791,23 @@ Latent state labels are arbitrary. Below we permute those labels to match that o
 ```{code-cell} ipython3
 :tags: [hide-input, render-all]
 
-permutation = jnp.array([1, 2, 0])
-model.coef_ = model.coef_[:, permutation]
-model.intercept_ = model.intercept_[permutation]
-model.transition_prob_ = model.transition_prob_[permutation][:, permutation]
+def relabel(model):
+    # the intercept is the bias term
+    bias_left = np.flatnonzero(model.intercept_ < -2)
+    bias_right = np.flatnonzero(model.intercept_ > 2)
+    # less biased (smallest |intercept|) is the engaged state
+    engaged_state = np.argmin(np.abs(model.intercept_))
+    relabel = np.concatenate([[engaged_state], bias_left, bias_right])
+    
+    # apply re-labeling
+    model.coef_ = model.coef_[:, relabel]
+    model.intercept_ = model.intercept_[relabel]
+    model.initial_prob_ = model.initial_prob_[relabel]
+    model.transition_prob_ = model.transition_prob_[relabel][:, relabel]
+    return model
+    
+model = relabel(model)
+
 ```
 
 <div class="render-all">
@@ -937,7 +893,6 @@ To better understand the temporal structure of decision making behavior, we can 
 </div>
 
 <div class="render-user">
-
 ```{code-cell} ipython3
 # Compute smooth_proba
 posteriors = 
@@ -949,10 +904,8 @@ print(
     np.allclose( , 1)
 )
 ```
-
 </div>
 
-<div class="render-presenter">
 
 ```{code-cell} ipython3
 # Compute smooth_proba
@@ -971,7 +924,6 @@ print(
 )
 ```
 
-</div>
 
 <div class="render-presenter
 
@@ -990,6 +942,8 @@ Let's plot the first 90 trials, corresponding to the first session.
 </div>
 
 ```{code-cell} ipython3
+:tags: [render-all]
+
 colors = ["#ff7f00", "#4daf4a", "#377eb8"]
 for i, c in enumerate(colors):
     plt.plot(posteriors[:90, i], color=c)
@@ -1024,18 +978,13 @@ This method finds the single most likely sequence of hidden states that best exp
 </div>
 
 <div class="render-user">
-
 ```{code-cell} ipython3
-:tags: [render-user]
 # get output of viterbi in one-hot encoding
 decoded_states = 
 decoded_states
 ```
-
 </div>
 
-
-<div class="render-presenter">
 
 ```{code-cell} ipython3
 :tags: [render-presenter]
@@ -1049,7 +998,6 @@ decoded_states = model.decode_state(
 decoded_states
 ```
 
-</div>
 
 From this we can compute the fractional occupancy, while correctly filtering out the NaNs.
 
@@ -1082,31 +1030,20 @@ Now we can compute the mouse's overall accuracy.
 </div>
 
 <div class="render-user">
-
 ```{code-cell} ipython3
-:tags: [render-user]
-
 # mask out the 0 contrast stimuli
-mask = 
-
+mask =
 # compute stimulus and choice side
-stim_side = 
-
+stim_side =
 # get the correct choices boolean
-correct_choices = 
-
+correct_choices =
 # compute the total accuracy applying the mask
-total_accuracy = 
-
+total_accuracy =
 # store in an array of dim 4
 accuracies_to_plot_viterbi = np.zeros(4)
 accuracies_to_plot_viterbi[0] = total_accuracy
-
 ```
-
 </div>
-
-<div class="render-presenter">
 
 ```{code-cell} ipython3
 # mask out the 0 contrast stimuli
@@ -1126,7 +1063,6 @@ accuracies_to_plot_viterbi = np.zeros(4)
 accuracies_to_plot_viterbi[0] = total_accuracy
 ```
 
-</div>
 
 And then we can use our output of ```decode_state``` to segment the trials into the estimated states and compute the accuracy within each state.
 
@@ -1138,7 +1074,6 @@ And then we can use our output of ```decode_state``` to segment the trials into 
 </div>
 
 <div class="render-user">
-
 ```{code-cell} ipython3
 accuracy_per_state = np.zeros(n_states)
 for s in range(n_states):
@@ -1146,10 +1081,8 @@ for s in range(n_states):
   accuracy_per_state[s] =
 accuracies_to_plot_viterbi[1:] = accuracy_per_state
 ```
-
 </div>
 
-<div class="render-presenter">
 
 ```{code-cell} ipython3
 accuracy_per_state = np.zeros(n_states)
@@ -1160,7 +1093,6 @@ for s in range(n_states):
 accuracies_to_plot_viterbi[1:] = accuracy_per_state
 ```
 
-</div>
 
 And we can plot this :)
 
