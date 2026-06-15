@@ -59,6 +59,15 @@ In this notebook, we will learn how to model behavioral choices by fitting a GLM
 
 ## 01. Download and preprocessing of data
 
+:::{admonition} What do we want to do?
+:class: note render-all
+
+1. Download the dataset
+2. See what it contains
+3. Subset the sessions we are interested in: 50-50 blocks, violation trials, training sessions
+
+:::
+
 ### Dataset
 
 <div class="render-all">
@@ -98,7 +107,6 @@ import pynapple as nap
 import seaborn as sns
 from one.api import ONE
 import matplotlib.pyplot as plt
-from nemos.glm_hmm.utils import compute_rate_per_state
 import nemos as nmo
 
 # Instantiate the ONE object
@@ -191,7 +199,7 @@ print(f"session \n(some) values: {trials.session.unique()[:5]}, data type: {tria
 ### Preprocessing: example session
 
 <div class="render-all">
-Finally, let's focus our analysis on one example session.
+Let's focus our analysis on one example session.
 </div>
 
 ```{code-cell} ipython3
@@ -268,7 +276,30 @@ df_trials = trials.query("session in @valid_sessions and probabilityLeft == 0.5"
 print(f"# of sessions after restrictions {df_trials['session'].nunique()}")
 ```
 
+:::{admonition} What did we do?
+:class: note render-all
+
+1. Downloaded the dataset
+2. Inspected its contents
+3. Kept the sessions we are interested in!
+
+:::
+
 ## 02. Building the design matrix
+
+:::{admonition} What will we do?
+:class: note render-all
+
+1. Define the predictors: signed contrast, previous choice, and WSLS.
+2. Prepare the inputs for the design matrix by computing signed contrast and filtering to valid choices.
+3. Introduce the `IdentityEval` and `HistoryConv` basis objects.
+4. Create basis functions for each predictor:
+   * signed contrast with `IdentityEval`
+   * previous choice with `HistoryConv`
+   * WSLS via basis multiplication
+5. Combine the bases into an additive basis and generate the design matrix with `compute_features`.
+6. Make sure all predictors are in the same numerical scale for comparison
+:::
 
 <div class="render-all">
 Now, with the valid sessions, we can compute the design matrix. In our case, we are interested in building a design matrix with three predictors: signed contrast, previous choice and win stay lose shift.
@@ -293,20 +324,7 @@ Let's go through the process of building the design matrix.
 
 </div>
 
-<div class="render-user">
-
-```{code-cell} ipython3
-# Select the necessary columns (and reset_index + drop): 
-# choice, contrast of stimuli and reward
-choices = 
-stim_left = 
-stim_right = 
-rewarded = 
-```
-
-</div>
-
-<div class="render-presenter">
+<div class="render-presenter, render-user">
 
 ```{code-cell} ipython3
 # We can select all the necessary values for the design matrix: 
@@ -370,15 +388,7 @@ signed_contrast[select_session]
 </div>
 
 
-<div class="render-user">
-
-```{code-cell} ipython3
-valid_choices_idx =
-```
-
-</div>
-
-<div class=" render-presenter">
+<div class="render-presenter, render-user">
 
 ```{code-cell} ipython3
 valid_choices_idx = np.flatnonzero(choices != viol_val)
@@ -512,7 +522,14 @@ Even though we need just a few lines of code, there is a lot going on. Here's a 
 
 ```{code-cell} ipython3
 # Create an additive basis using our three components
-basis_object =
+basis_object = (
+    # will process one input
+ 
+    # will process two inputs (choice & reward)
+  
+    # will process one input     
+ 
+)
 ```
 
 </div>
@@ -537,7 +554,16 @@ basis_object = (
 
 ```{code-cell} ipython3
 # Call compute features to get the raw model design
-X_unnormalized = 
+X_unnormalized = basis_object.compute_features(
+    # input 1 : processed with stimuli_basis
+
+    # input 2 : wsls input 1: choice
+
+    # input 3 : wsls input 2: reward
+
+    # input 4 : processed with prev_choice
+
+)
 X_unnormalized[:5,:]
 ```
 
@@ -587,6 +613,15 @@ X[:, 0] =
 
 </div>
 
+
+<div class="render-presenter">
+
+We z-score only the signed-contrast predictor (column 0), leaving the previous-choice and WSLS columns untouched since they are already on a unit scale. 
+
+Previous choice and WSLS are already on the same scale (−1 or +1), so their weights are directly comparable. Signed contrast is continuous and usually smaller in magnitude, which can inflate its fitted weight simply because of its numerical scale. Normalizing signed contrast (mean 0, SD 1) removes this scale artifact, making GLM weights more comparable across predictors.
+
+</div>
+
 <div class="render-presenter">
 
 ```{code-cell} ipython3
@@ -601,21 +636,7 @@ X[:, 0] = zscore(X[:, 0])
 
 </div>
 
-<div class="render-presenter">
 
-We z-score only the signed-contrast predictor (column 0), leaving the previous-choice and WSLS columns untouched since they are already on a unit scale. 
-
-Previous choice and WSLS are already on the same scale (−1 or +1), so their weights are directly comparable. Signed contrast is continuous and usually smaller in magnitude, which can inflate its fitted weight simply because of its numerical scale. Normalizing signed contrast (mean 0, SD 1) removes this scale artifact, making GLM weights more comparable across predictors.
-
-</div>
-
-<div class="render-presenter">
-
-```{code-cell} ipython3
-
-```
-
-</div>
 
 :::{admonition} Why do we normalize our stimuli predictor?
 :class: question render-user
@@ -630,7 +651,12 @@ Because the contrast values are typically much smaller in magnitude than ±1, th
 By normalizing, we rescale the predictor to have mean 0 and standard deviation 1. Previous choice and WSLS are already on a unit scale by construction — their values are symmetric around zero and their spread is naturally 1. This is why we only normalize signed contrast.
 :::
 
+
+<div class="render-presenter">
+
 We can see our design matrix now!
+
+</div>
 
 ```{code-cell} ipython3
 :tags: [render-all]
@@ -639,7 +665,25 @@ We can see our design matrix now!
 workshop_utils.plot_design_matrix(X, choices, valid_choices_idx);
 ```
 
+
+:::{admonition} What did we do?
+:class: note render-all
+
+1. We started with raw behavioral variables (choices, rewards, and contrasts) and identified the predictors we wanted to include: signed contrast, previous choice, and WSLS.
+2. Using ```IdentityEval```, ```HistoryConv``` and multiplicative basis, we defined basis functions for each predictor and combined them into a single additive basis.
+3. We ended with a design matrix, generated with ```compute_features```, ready to be used as input to the GLM.
+:::
+
+
 ## 03. Model fitting
+
+:::{admonition} What will we do?
+:class: note render-all
+
+1. Convert choices so we can model them with a Bernoulli GLM-HMM
+2. Generated a vector containing session starts to use it in fitting
+3. Initialize our ```GLMHMM``` object with and fit our model with ```nmo.fit()```
+:::
 
 We are going to fit a Bernoulli GLM-HMM to model binary choices. For this reason, we must convert choices from the original $\{-1, 1\}$ encoding to $\{0, 1\}$.
 
@@ -771,8 +815,26 @@ model.fit(
 
 That's all it takes!
 
+:::{admonition} What did we do?
+:class: note render-all
+
+1. Started with the design matrix and behavioral choices.
+2. Converted choices into a binary format suitable for a Bernoulli GLM-HMM.
+3. Identified the session boundaries and created the session-start vector required for fitting.
+4. Instantiated a `GLMHMM` object and fit the model using `nmo.fit()`.
+5. Ended with a fitted GLM-HMM ready for inspection and analysis.
+
 
 ## 04. Interpreting the results
+
+:::{admonition} What did we do?
+:class: note render-all
+
+1. Inspect the output of the model
+2. Interpret glm weights and transition matrix
+3. Use ```smooth_proba``` to obtain the posterior state probablities to visualize and interpret temporal structure of decision making behavior
+4. Use ```decode_state``` to obtain the inferred sequence of states given the observations to compute fractional occupancies and accuracy per state
+:::
 
 ### How to visualize the fitted parameters
 
@@ -1107,6 +1169,16 @@ workshop_utils.plot_accuracy_and_occupancy(
 
 According to state occupancy derived with the Viterbi algorithm, this mouse spent the majority of the trials (70%) in the engaged state and a lesser portion of trials in the other two states (30%). We can see that even though this mouse had an overall accuracy of 80.36%, it achieved a higher accuracy of 87.04% in the "engaged" state compared to 66.03% and 63.03% in the "bias left" and "bias right", respectively.
 
+:::{admonition} What did we do?
+:class: note render-all
+
+1. Started with a fitted GLM-HMM.
+2. Inspected the model outputs, including the GLM weights and transition matrix.
+3. Used `smooth_proba` to compute posterior state probabilities and examine the temporal structure of behavior.
+4. Used `decode_state` to infer the most likely state sequence for each trial.
+5. Computed summary statistics from the decoded states, including fractional occupancy and accuracy per state.
+
+
 ## Additional exercises
 
 <div class="render-all">
@@ -1119,7 +1191,16 @@ According to state occupancy derived with the Viterbi algorithm, this mouse spen
 
 </div>
 
+## Conclusion
+<div class="render-all">
 
+1. A GLM-HMM combines a GLM (how predictors influence choices) with an HMM (how latent behavioral states evolve over time).
+2. We transformed raw behavioral data into a design matrix containing sensory evidence, previous choice, and WSLS.
+3. We fit a 3-state GLM-HMM across multiple sessions while explicitly accounting for session boundaries.
+4. The GLM weights showed distinct decision-making strategies, while the transition matrix quantified how stable those strategies were over time.
+5. Using smooth_proba and decode_state, we linked latent states back to behavior, allowing us to identify when different strategies were used and how they affected performance.
+
+</div>
 
 ## Additional resources
 
