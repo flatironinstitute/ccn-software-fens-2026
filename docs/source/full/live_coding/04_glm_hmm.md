@@ -160,7 +160,6 @@ We only need a subset of those columns, in particular we will work with:
   </tbody>
 </table>
 
-
 Let's extract what we need, and inspect its contents.
 
 </div>
@@ -188,6 +187,8 @@ print(f"session \n(some) values: {trials.session.unique()[:5]}, data type: {tria
 ```
 
 </div>
+
+### Preprocessing: example session
 
 <div class="render-all">
 Finally, let's focus our analysis on one example session.
