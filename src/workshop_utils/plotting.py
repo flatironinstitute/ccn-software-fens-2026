@@ -31,6 +31,7 @@ __all__ = [
     "plot_design_matrix",
     "plot_posteriors",
     "plot_accuracy_and_occupancy",
+    "animate_2d_movie",
 ]
 
 
@@ -1273,3 +1274,51 @@ def plot_accuracy_and_occupancy(frac_occupancy, accuracies_to_plot):
     plt.tight_layout()
     plt.show()
     return fig
+
+
+class Plot2DMovie:
+    def __init__(
+        self,
+        images: np.ndarray,
+        start: int = 0,
+        interval: float = 100,
+        figsize: tuple = (6, 6),
+    ):
+        self.images = images
+        self.start = start
+        self.frames = images.shape[0] - start
+        self.interval = interval
+
+        self.vmin = np.min(images)
+        self.vmax = np.max(images)
+        (
+            self.fig,
+            self.image,
+        ) = self.setup(figsize)
+
+    def setup(self, figsize):
+        """
+        Initialization of the plot.
+        """
+
+        fig, ax = plt.subplots(1, 1, figsize=figsize)
+        image = ax.pcolormesh(self.images[self.start], vmin=self.vmin, vmax=self.vmax)
+
+        return fig, image
+
+    def update(self, frame):
+        self.image.set_array(self.images[frame])
+
+    def run(self):
+        anim = FuncAnimation(
+            self.fig, self.update, self.frames, interval=self.interval, repeat=True
+        )
+        plt.close(self.fig)
+        return anim
+
+def animate_2d_movie(images, **kwargs):
+    """
+    Animate the convolution of a 1D kernel with some Tsd array.
+    """
+    anim = Plot2DMovie(images)
+    return anim

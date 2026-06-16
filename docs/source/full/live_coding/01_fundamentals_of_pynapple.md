@@ -15,65 +15,6 @@ kernelspec:
 :tags: [render-all]
 
 %matplotlib inline
-import nemos as nmo
-
-import workshop_utils
-import pynapple as nap
-import matplotlib.pyplot as plt
-import numpy as np
-import scipy.stats as stats
-import matplotlib.pyplot as plt
-plt.style.use(nmo.styles.plot_style)
-
-
-from matplotlib.animation import FuncAnimation
-
-class Plot2DMovie:
-    def __init__(
-        self,
-        images: np.ndarray,
-        start: int = 0,
-        interval: float = 100,
-        figsize: tuple = (6, 6),
-    ):
-        self.images = images
-        self.start = start
-        self.frames = images.shape[0] - start
-        self.interval = interval
-
-        self.vmin = np.min(images)
-        self.vmax = np.max(images)
-        (
-            self.fig,
-            self.image,
-        ) = self.setup(figsize)
-
-    def setup(self, figsize):
-        """
-        Initialization of the plot.
-        """
-
-        fig, ax = plt.subplots(1, 1, figsize=figsize)
-        image = ax.pcolormesh(self.images[self.start], vmin=self.vmin, vmax=self.vmax)
-
-        return fig, image
-
-    def update(self, frame):
-        self.image.set_array(self.images[frame])
-
-    def run(self):
-        anim = FuncAnimation(
-            self.fig, self.update, self.frames, interval=self.interval, repeat=True
-        )
-        plt.close(self.fig)
-        return anim
-
-def animate_2d_movie(images, **kwargs):
-    """
-    Animate the convolution of a 1D kernel with some Tsd array.
-    """
-    anim = Plot2DMovie(images)
-    return anim
 ```
 
 :::{admonition} Download
@@ -120,11 +61,14 @@ If an import fails, you can do `!pip install pynapple matplotlib` in a cell to f
 ```{code-cell} ipython3
 :tags: [render-all]
 
+%matplotlib inline
 import workshop_utils
 import pynapple as nap
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.stats as stats
+import nemos as nmo
+plt.style.use(nmo.styles.plot_style)
 ```
 
 For this notebook we will work with fake data. The following cell generates a set of variables that we will use to create the different pynapple objects.
@@ -175,7 +119,7 @@ plt.plot(rand_ts, rand_data, label=rand_col)
 plt.title("Random Data")
 plt.legend()
 
-anim = animate_2d_movie(spiral_data)
+anim = workshop_utils.animate_2d_movie(spiral_data)
 plt.title("Spiral Data")
 anim.run()
 ```
@@ -783,7 +727,6 @@ count = all_neurons.count(1, ep_signal)
 print(count)
 ```
 
-
 <div class="render-all">
 
 Let's visulize the results. **TIP**: Pynapple works directly with matplotlib. Passing a time series object to `plt.plot` will display the figure with the correct time axis.
@@ -910,11 +853,11 @@ plt.plot(cos_thresh, 'o-')
 
 <div class="render-all">
 
-Pynapple provides functions for standard analysis in systems neuroscience. The first function we will try is `compute_tuning_curves` that calculate the response of a cell to a particular feature. 
+Pynapple provides functions for standard analysis in systems neuroscience. The first function we will try is `compute_tuning_curves` that calculates the response of a cell to a particular feature. 
 
 A good practice when using a function for the first time is to check the docstrings to learn how to pass the argument.
 
-**Question**: can you examine the docstring of `nap.compute_tuning_curves`?
+**Question**: Can you examine the docstring of `nap.compute_tuning_curves`?
 
 </div>
 
@@ -924,12 +867,12 @@ print(nap.compute_tuning_curves.__doc__)
 
 <div class="render-all">
 
-**Question**: Can you compute the response (i.e. firing rate) of the units in `tsgroup` as function of the feature `tsd1` using the function `nap.compute_tuning_curves`?
+**Question**: Can you compute the response (i.e. firing rate) of the units in `all_neurons` as function of the feature `cos` using the function `nap.compute_tuning_curves`?
 
 </div>
 
 ```{code-cell} ipython3
-tc = nap.compute_tuning_curves(tsgroup, tsd1, bins=5, feature_names=["feat1"])
+tc = nap.compute_tuning_curves(all_neurons, cos_tsd, bins=5, feature_names=["cos"])
 tc
 ```
 
@@ -945,7 +888,7 @@ The coordinates can be accessed with the `coords` attribute. The feature positio
 
 ```{code-cell} ipython3
 print(tc.unit.values)
-print(tc.feat1.values)
+print(tc.cos.values)
 print(tc.occupancy)
 print(tc.bin_edges)
 print(tc.fs)
@@ -963,7 +906,7 @@ print(tc.fs)
 # tc.plot(col="unit")
 # tc[1].plot()
 # plt.plot(tc[1].feat1, tc[1].values)
-plt.plot(tc.feat1, tc.values.T)
+plt.plot(tc.cos, tc.values.T)
 ```
 
 ## Verify Your Setup
@@ -980,8 +923,4 @@ plt.plot(tc.feat1, tc.values.T)
 import workshop_utils
 path = workshop_utils.fetch_data("Mouse32-140822.nwb")
 print(path)
-```
-
-```{code-cell} ipython3
-
 ```
