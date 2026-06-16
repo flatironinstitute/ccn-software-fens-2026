@@ -53,8 +53,7 @@ And turn on `View > Render side-by-side` (shortcut `Shift+R`).
 - [API reference for objects and methods](https://pynapple.org/api.html)
 
 
-Let's start by importing the pynapple package and matplotlib to see if everything is correctly installed.
-If an import fails, you can do `!pip install pynapple matplotlib` in a cell to fix it.
+Let's start by importing the pynapple package and other packages we'll need, as well as generate some fake data that we'll use throughout the notebook.
 
 </div>
 
@@ -69,12 +68,6 @@ import numpy as np
 import scipy.stats as stats
 import nemos as nmo
 plt.style.use(nmo.styles.plot_style)
-```
-
-For this notebook we will work with fake data. The following cell generates a set of variables that we will use to create the different pynapple objects.
-
-```{code-cell} ipython3
-:tags: [render-all]
 
 cos_ts = np.arange(0,100,0.1)
 cos_data = np.cos(1/4*cos_ts)
@@ -103,9 +96,13 @@ slow_times = np.arange(0,100,10)
 
 ## Instantiate pynapple objects 
 
-Pynapple objects can help reduce the size of our workspace by associating relevant data into a single object. Here we will show how to instantiate all the different pynapple objects.
+Pynapple objects can help reduce the size of our workspace by associating relevant data into a single object. Here we will show how to instantiate all the different pynapple objects. We'll start with objects that combine data points with corresponding timestamps (as well as column names for a `TsdFrame`).
 
-Let's start with objects that combine data points with corresponding timestamps (as well as column names for a `TsdFrame`). Suppose we have the following sets of data.
+<div class="render-all">
+
+Suppose we have and experiment that generated the following data.
+
+</div>
 
 ```{code-cell} ipython3
 :tags: [render-all]
@@ -198,7 +195,11 @@ print(epochs)
 
 Pynaple `Ts` objects allow us to define time stamps that aren't associated with any particular value or magnitude, such as spike times.
 
+<div class="render-all">
+    
 Suppose we record spike times from three different neurons, plotted below.
+
+</div>
 
 ```{code-cell} ipython3
 :tags: [render-all]
@@ -335,7 +336,7 @@ Pynapple `IntervalSet` objects can be intersected to create a new `IntervalSet` 
 ```{code-cell} ipython3
 :tags: [render-all]
 
-# randomly generated intervals for demonstration
+# random intervals
 rng = np.random.default_rng(3)
 ep_random = nap.IntervalSet(np.sort(rng.uniform(0, 100, 20)))
 print(ep_random)
@@ -923,4 +924,8 @@ plt.plot(tc.cos, tc.values.T)
 import workshop_utils
 path = workshop_utils.fetch_data("Mouse32-140822.nwb")
 print(path)
+```
+
+```{code-cell} ipython3
+
 ```
