@@ -97,6 +97,10 @@ def main():
             nb_contents = re.sub(
                 rf"]\({src_anchor}-[a-z]+\)", f"](../{path}#{tgt_anchor})", nb_contents
             )
+
+        # remove download admonition
+        nb_contents = re.sub(r":::{admonition} Download.*?:::", "", nb_contents, flags=re.DOTALL)
+
         output_f.write_text(nb_contents)
 
 
