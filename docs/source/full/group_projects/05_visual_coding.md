@@ -274,12 +274,12 @@ Let's use that function to construct two separate perievent dictionaries, one al
 # Set window of perievent 500 ms before and after the start of the event
 window_size = (-.250, .500) 
 
-peri_white = nap.compute_perievent(timestamps=selected_units,
-                                   tref=nap.Ts(flashes_white.start),
-                                   minmax=window_size)
-peri_black = nap.compute_perievent(timestamps=selected_units,
-                                   tref=nap.Ts(flashes_black.start),
-                                   minmax=window_size)
+peri_white = nap.compute_perievent(data=selected_units,
+                                   events=nap.Ts(flashes_white.start),
+                                   window=window_size)
+peri_black = nap.compute_perievent(data=selected_units,
+                                   events=nap.Ts(flashes_black.start),
+                                   window=window_size)
 ```
 
 <div class="render-all">
@@ -734,7 +734,7 @@ model.fit(X_train, u_counts.restrict(flashes_train))
 
 <div class="render-all">
 - Generate model predictions (remember to compute to spikes / sec!). (Hint: )
-- Compute model PSTHs. (Note that you should use [compute_perievent_continuous](https://pynapple.org/generated/pynapple.process.perievent.html#pynapple.process.perievent.compute_perievent_continuous) here! Otherwise, this looks very similar to our PSTH calculation [above](compute-perievent-users).)
+- Compute model PSTHs.
 - Visualize these PSTHs. 
 
 The following helper function should help with the visualization step (it works for one or multiple neurons).
@@ -756,7 +756,7 @@ def plot_pop_psth(
     Model predictions should be passed as additional keyword arguments. The key will be
     used as the label, and the value should be a 2-tuple of `(style, peri)`, where
     `style` is a matplotlib style (e.g., "blue" or "--") and `peri` is a PSTH
-    dictionary, as returned by `compute_perievent_continuous`.
+    dictionary, as returned by `compute_perievent`.
     
     Parameters:
     -----------
@@ -845,17 +845,17 @@ pred_unit = pred_unit/ bin_size
 ```{code-cell} ipython3
 # Re-center timestamps around white stimuli
 # +50 because we subtracted .50 at beginning of stimulus presentation
-peri_white_pred_unit = nap.compute_perievent_continuous(
-    timeseries=pred_unit, 
-    tref=nap.Ts(flashes_test_white.start+.50),
-    minmax=window_size
+peri_white_pred_unit = nap.compute_perievent(
+    data=pred_unit, 
+    events=nap.Ts(flashes_test_white.start+.50),
+    window=window_size
 )  
 # Re-center timestamps for black stimuli
 # +50 because we subtracted .50 at beginning of stimulus presentation
-peri_black_pred_unit = nap.compute_perievent_continuous(
-    timeseries=pred_unit, 
-    tref=nap.Ts(flashes_test_black.start+.50), 
-    minmax=window_size
+peri_black_pred_unit = nap.compute_perievent(
+    data=pred_unit, 
+    events=nap.Ts(flashes_test_black.start+.50), 
+    window=window_size
 )  
 ```
 

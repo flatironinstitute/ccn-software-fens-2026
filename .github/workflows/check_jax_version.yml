@@ -1,0 +1,26 @@
+name: check_jax_version
+on:
+  push:
+  workflow_dispatch:
+  schedule:
+  - cron: 0 0 * * 0     # weekly
+
+permissions: {}
+
+jobs:
+  check_jax_version:
+    runs-on: ubuntu-latest
+    name: Check jax version on conda-forge.
+    steps:
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      with:
+        persist-credentials: false
+    - uses: prefix-dev/setup-pixi@5185adfbffb4bd703da3010310260805d89ebb11 # v0.9.6
+      with:
+        run-install: false
+    - run: |
+        condaforge_version=$(pixi search jaxlib -c conda-forge --json | jq '."linux-64"[0].version')
+        echo $condaforge_version
+        if [[ $condaforge_version != '"0.9.2"' ]]; then
+            echo "jaxlib conda forge version changed, update pyproject.toml";
+        fi

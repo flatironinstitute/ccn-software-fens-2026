@@ -44,6 +44,7 @@ html_sourcelink_suffix = ""
 myst_enable_extensions = ["colon_fence", "dollarmath", "attrs_inline"]
 html_theme_options = {
     "home_page_in_toc": True,
+    "show_toc_level": 3,
     "github_url": "https://github.com/flatironinstitute/ccn-software-fens-2026",
     "repository_url": "https://github.com/flatironinstitute/ccn-software-fens-2026",
     "logo": {
@@ -82,6 +83,6 @@ if run_nb := os.environ.get("RUN_NB"):
     print(f"Excluding notebooks: {nb_execution_excludepatterns}")
 else:
     nb_execution_excludepatterns = []
-    print("Running all notebooks, see CONTRIBUTING for details")
+    print("Running all notebooks")
 
 nb_execution_excludepatterns += ['*-users*', '*-presenters*']
