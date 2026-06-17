@@ -12,32 +12,16 @@ kernelspec:
 ---
 
 ```{code-cell} ipython3
-:tags: [hide-input, render-all]
+:tags: [render-all]
 
-import jax
-import numpy as np
-import seaborn as sns
-import matplotlib.pyplot as plt
+import warnings
 
-jax.config.update("jax_enable_x64", True)
-np.random.seed(65)
-custom_params = {"axes.spines.right": False, "axes.spines.top": False}
-sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params)#, context="notebook")
-
-import workshop_utils
+warnings.filterwarnings(
+    "ignore",
+    message="coroutine .* was never awaited",
+    category=RuntimeWarning,
+)
 ```
-:::{admonition} Working without pynapple
-:class: note render-all
-
-Unlike the other notebooks in this workshop, here we work directly with `pandas` DataFrames and `numpy` arrays rather than pynapple objects. The IBL trial data is naturally tabular (one row per trial, with no continuous time axis), so we keep it as a DataFrame and show how NeMoS interfaces with plain NumPy. NeMoS also accepts pynapple `Tsd`/`TsdFrame` objects directly, and we point out as we go where that would change the workflow (for example, how session boundaries are handled).
-:::
-
-
-:::{admonition} Download
-:class: important render-all
-
-This notebook can be downloaded as **{nb-download}`04_glm_hmm.ipynb`**. See the button at the top right to download as markdown or pdf.
-:::
 
 :::{admonition} Jupyter Lab tip
 :class: important render-all
@@ -49,24 +33,36 @@ Also reminder to presenter: Go to `View > Appearance`, select `Simple Interface`
 And turn on `View > Render side-by-side` (shortcut `Shift+R`).
 :::
 
-# Infer behavioral strategies during decision making with GLM-HMMs
++++
 
+# Infer behavioral strategies during decision making with GLM-HMMs
 <div class="render-all">
 
-In this notebook, we will learn how to model behavioral choices by fitting a GLM-HMM, replicating the main findings of Ashwood et al. (2022) <span id="cite1a"></span><a href="#ref1a">[1a]</a>. We will do this in four steps: download and preprocess the data, build a design matrix with three predictors, fit the model and interpret the results.
+In this notebook, we will learn how to model behavioral choices by fitting a GLM-HMM, replicating the main findings of Ashwood et al. (2022) <span id="cite1a"></span><a href="#ref1a">[1a]</a>. 
+
+![Ashwood paper figures to replicate](../../docs/source/_static/ashwood_paper_figs.svg)
+
+We will do this in four steps: 
+
+1. Download and preprocess the data
+2. Build a design matrix with three predictors
+3. Fit the model 
+4. Interpret the results
 
 </div>
 
+
 ## 01. Download and preprocessing of data
 
-:::{admonition} What do we want to do?
-:class: note render-all
+:::{admonition} What do we want to do in this subsection?
+:class: attention render-all
 
-1. Download the dataset
+1. Download and understand the dataset
 2. See what it contains
-3. Subset the sessions we are interested in: 50-50 blocks, violation trials, training sessions
+3. Subset the sessions we are interested in
 
 :::
+
 
 ### Dataset
 
@@ -76,6 +72,18 @@ Data for this notebook comes from the IBL decision-making task (IBL et al., 2021
 During this task, a sinusoidal grating with varying contrast [0\%-100\%] appeared either at the right or left side of the screen. The mice indicated this side by turning a small wheel, which moved the stimulus toward the center of the screen (Burgess et al., 2021 <span id="cite3b"></span><a href="#ref3b">[3b]</a>). If the mice chose the side correctly, they would receive a water reward; if not, they would get a noise burst and a 1-second timeout. For the first 90 trials of each session, the stimulus appeared randomly on either side of the screen; after that, it appeared on one side with fixed probability 0.8, alternating randomly every 20–100 trials. 
 
 </div>
+
+<div class="render-presenter">
+- Data from the IBL decision-making task (IBL et al., 2021) <span id="cite2c"></span><a href="#ref2c">[2c]</a>, 
+- variation of the two-alternative forced-choice perceptual detection task (Burgess et al., 2021 <span id="cite3c"></span><a href="#ref3c">[3c]</a>).
+
+- sinusoidal grating with varying contrast appeared either at the right or left side of the screen. 
+- Mice had to indicate where it appeared
+- If the mice chose the side correctly, they would receive a water reward; if not, they would get a noise burst and a 1-second timeout. 
+- For the first 90 trials of each session, the stimulus appeared randomly on either side of the screen; after that, it appeared on one side with fixed probability 0.8, alternating randomly every 20–100 trials. 
+
+</div>
+
 
 
 <div class="render-all">
@@ -87,45 +95,138 @@ During this task, a sinusoidal grating with varying contrast [0\%-100\%] appeare
 </div>
 
 
-
-
 ### Data Streaming
 
 <div class="render-all">
-First, let's download the data using  <a href="https://docs.internationalbrainlab.org/notebooks_external/one_quickstart.html">Open Neurophysiology Environment (ONE)</a>
+Let's download the data using  <a href="https://int-brain-lab.github.io/ONE/one_reference.html">Open Neurophysiology Environment (ONE)</a>
 </div>
 
+<div class="render-presenter">
+We will download the data from this task using  <a href="https://int-brain-lab.github.io/ONE/one_reference.html">Open Neurophysiology Environment (ONE). </a>
+
+- This is a protocol for standardizing, searching and sharing neurophysiology data. 
+- On the one hand it defines conventions for how to store and share neurophysiology data and 
+- on the other it provides an API to search and load datasets which can be stored on a remote server or local machine. 
+- We will use this to download data from the International Brain Laboratory.
+
+(API:  stands for application programming interface, is a set of protocols that enable different software components to communicate and transfer data)</a>
+</div>
+
+<div class="render-presenter">
+1. First we run this
+2. We are getting all of our imports to run the code
+4. For the 64-bit floating point: By default, JAX uses 32-bit precision (float32) because it is faster and more memory-efficient, especially on GPUs and TPUs. However, when dealing with a glm-hmm we compute quantities a bunch of times and some of those quantities are very small numbers. So with float64 we just guarantee more numerical stability i.e avoid small numerical errors to propagate. 
+3. And helper plotting functions
+
+JAX is nemos backend - many operations in nemos are performed using jax. we might want to change the global setting of jax as this affects how nemos performs computations
+</div>
 
 ```{code-cell} ipython3
 :tags: [render-all]
 
-import os
-import jax
-import jax.numpy as jnp
-import numpy as np
-import pynapple as nap
+# Imports
 import seaborn as sns
-from one.api import ONE
 import matplotlib.pyplot as plt
+import os
+import numpy as np
+from one.api import ONE
 import nemos as nmo
+import workshop_utils
+import jax
 
-# Instantiate the ONE object
+# Enable 64-bit floating-point and integer types
+jax.config.update("jax_enable_x64", True)
+
+# Plotting params
+custom_params = {"axes.spines.right": False, "axes.spines.top": False}
+sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params)#, context="notebook")
+```
+
+<div class="render-presenter">
+1. Now we are setting where we want our data to be download, if we run and print it we will get a directory.
+</div>
+
+```{code-cell} ipython3
+:tags: [render-all]
+
+# Set up where we want our data to be downloaded
 data_dir = os.environ.get("NEMOS_DATA_DIR")
 print("IBL data dir:", data_dir)
-ONE.setup(base_url='https://openalyx.internationalbrainlab.org', silent=True)
-one = ONE(password = 'international', cache_dir=data_dir)
+```
 
+<div class="render-presenter">
+1. First we setup our ONE object using the setup function. 
+
+- This function (more precisely class method) creates or updates the local configuration used by one. - It stores information such as which server to connect and authentication details. 
+- Here we are specifying we want to connect to the international brain laboratory database.
+- We are also saying we want to set the silent keyword argument to True, to suppress interactive messages
+- we run this
+</div>
+
+```{code-cell} ipython3
+:tags: [render-all]
+
+# Configure 
+ONE.setup(
+    base_url='https://openalyx.internationalbrainlab.org', 
+    silent=True
+)
+```
+<div class="render-presenter">
+2. Then we initialize our ONE object. We pass it "international" as a password, which is used to authenticate the alyx server we just connected to. This allows ONE to log in and access datasets that require authentication
+3. with cache_dir we are specifying where we want the data to be stored locally. When a dataset is requested, ONE first checks whether it already exists in the cache directory. If not, it downloads it and saves it here.
+
+</div>
+
+```{code-cell} ipython3
+:tags: [render-presenter]
+# Instantiate ONE object
+one = ONE(password = 'international', cache_dir=data_dir)
+```
+
+<div class="render-user">
+
+```{code-cell} ipython3
+# Instantiate ONE object
+one = # Complete
+```
+</div>
+
+<div class="render-presenter">
+- Next, we load the behavioral data for one subject from the IBL aggregate dataset.
+- let's run this
+- and see what we have: we are choosing this particular subject moving forward to replicate the figures in ashwood et al.
+- then the `load_aggregate` function retrieves a preprocessed table containing trial-by-trial information,
+- such as choices, stimuli, rewards, and timing variables. We then inspect the available
+- columns to understand what information is contained in the dataset.
+</div>
+
+```{code-cell} ipython3
+:tags: [render-all]
 
 # Then we need to choose our subject and run load_aggregate
 subject = "CSHL_008"
 trials = one.load_aggregate('subjects', subject, '_ibl_subjectTrials.table')
+
+# We can see what we got
+print(trials.head(5))
+
+# We can see the type of object we are dealing with
+print(type(trials))
 
 # We can see the information we get by printing the columns
 print(trials.columns)
 ```
 
 
-`trials` is a pandas DataFrame, with one row per trial and one column per measured variable. We can take a subset of those columns to keep only the relevant sources of information. We are modeling choice as result of observables and behavioral state, so we need choice, stimuli presented and reward obtained. Additionally, we want to keep the information of the probability of the stimulus appearing in a given position since this changes within a session, and the session id to know when sessions start and end.
+<div class="render-presenter">
+
+- `trials` is a pandas DataFrame, with one row per trial and one column per measured variable. 
+- We can take a subset of those columns to keep only the relevant sources of information. 
+- We are modeling choice as result of observables and behavioral state, so we need choice, stimuli presented and reward obtained. 
+- Additionally, we want to keep the information of the probability of the stimulus appearing in a given position since this changes within a session, and the session id to know when sessions start and end.
+
+</div>
 
 <div class="render-users, render-presenter">
 We only need a subset of those columns, in particular we will work with:
@@ -172,6 +273,16 @@ Let's extract what we need, and inspect its contents.
 
 </div>
 
+<div class="render-presenter">
+So here, he just subset choice, contrast at each side, reward information, probability of stimulus appearing on the left and session, and afterwards we simply have print statements with the sorted values that we get and the types of values that we get.
+
+- here -1 corresponds to a choice to the right, 0 to an invalid trial and 1 to a leftward choice. this is an integer
+- contrast left and and right correspond to the contrast of the stimulus presented. we have some nan values here because nan indicates that no stimulus was presented on that side. in reality it means the same as having 0 contrast
+- a reward of -1 indicates the mouse made the wrong call, whilst a reward of 1 means they made the right call.
+- probability of stimulus on left can take many values between 0 and 1. we will later subset only the ones corresponding to .5
+- session values are strings of numbers
+</div>
+
 ```{code-cell} ipython3
 :tags: [render-all]
 
@@ -196,32 +307,39 @@ print(f"session \n(some) values: {trials.session.unique()[:5]}, data type: {tria
 
 </div>
 
-### Preprocessing: example session
+
+:::{admonition} Working without pynapple
+:class: note render-all
+
+Unlike the other notebooks in this workshop, here we work directly with `pandas` DataFrames and `numpy` arrays rather than pynapple objects. The IBL trial data is naturally tabular (one row per trial, with no continuous time axis), so we keep it as a DataFrame and show how NeMoS interfaces with plain NumPy. NeMoS also accepts pynapple `Tsd`/`TsdFrame` objects directly, and we point out as we go where that would change the workflow (for example, how session boundaries are handled).
+:::
+
+<div class="render-presenter">
+
+- we will work with pandas dataframes and numpy arrays rather than pynapple
+- NeMos also accepts pynapple tsd and tsd frames 
+</div>
+
+### Preprocessing: keeping only the relevant sessions and trials
 
 <div class="render-all">
-Let's focus our analysis on one example session.
+Now we will take a subset of those trials. First, to match Ashwood et al. (2022) <a href="#ref1b">[1b]</a>, we will focus our analysis on the first 90 trials, in which the stimulus appears on the left and right with equal probability (50-50).
 </div>
+
+<div class="render-presenter">
+
+- Now, we will restrict the analysis. Our first restriction is to only keep the first 90 trials of each session to match the work of Ashwood et al. (2022) <span id="cite1b"></span><a href="#ref1b">[1b]</a>. 
+- In this segment, the stimulus appears on the left and right with equal probability (0.5/0.5), and thus choices should be driven primarily by sensory evidence rather than learned expectations about stimulus probability.
+
+</div>
+
 
 ```{code-cell} ipython3
 :tags: [render-all]
-
 # Choose example session
 sess_ex = '726b6915-e7de-4b55-a38e-ff4c461211d3'
 # Subset session trials
 trials_sess = trials[trials.session == sess_ex].reset_index()
-```
-
-Now, we will restrict the analysis to the first 90 trials of each session to match the work of Ashwood et al. (2022) <span id="cite1b"></span><a href="#ref1b">[1b]</a>. In this segment, the stimulus appears on the left and right with equal probability (0.5/0.5), and thus choices should be driven primarily by sensory evidence rather than learned expectations about stimulus probability.
-
-<div class="render-all">
-
-To match Ashwood et al. (2022) <a href="#ref1b">[1b]</a>, we will focus our analysis on the first 90 trials, in which the stimulus appears on the left and right with equal probability (50-50).
-
-</div>
-
-```{code-cell} ipython3
-:tags: [render-all]
-
 
 # Plot
 plt.plot(trials_sess["probabilityLeft"][:300])
@@ -233,9 +351,7 @@ plt.xlabel("Trial number")
 plt.show()
 ```
 
-In Ashwood et al. (2022) <span id="cite1c"></span><a href="#ref1c">[1c]</a>, only sessions with fewer than 10 violations were used. To follow this work, we will now count the number of violations — trials where the animal made no choice (i.e. `choice == 0`) — during the 50-50 trials. For this, we will:
- 1) Subset sessions which include 50-50 trials
- 2) Exclude sessions with >10 violation trials
+
 
 <div class="render-all">
 Let's do some pandas wrangling to keep only the sessions that have:
@@ -246,38 +362,67 @@ Let's do some pandas wrangling to keep only the sessions that have:
 
 </div>
 
+
+<div class="render-presenter">
+- In the original paper, only sessions with fewer than 10 violations were used. 
+
+So in this code
+</div>
+
 ```{code-cell} ipython3
 :tags: [render-all]
+def select_sessions(
+    trials,
+    probability_left=0.5,
+    max_violations=10,
+    violation_value=0,
+):
+    """
+    Select sessions containing 0.2, 0.5 and 0.8 probability blocks,
+    and fewer than `max_violations` invalid trials in the specified block.
 
-# Invalid choice marker
-viol_val = 0
+    Returns
+    -------
+    df_trials : pd.DataFrame
+        Trials from valid sessions restricted to the selected block.
+    """
 
-# Selecting the sessions as in the Ashwood at al. paper
-# Boolean mask selecting sessions with 50-50, 20-80 and 80-20 blocks
-has_three_blocks = (
-    trials.groupby("session")["probabilityLeft"]
-          .agg(lambda s: set(s.unique()) == {0.2, 0.5, 0.8})
+    has_three_blocks = (
+        trials.groupby("session")["probabilityLeft"]
+        .agg(lambda s: set(s.unique()) == {0.2, 0.5, 0.8})
+    )
+
+    violations = (
+        trials.query("probabilityLeft == @probability_left")
+        .groupby("session")["choice"]
+        .agg(lambda s: s.eq(violation_value).sum())
+    )
+
+    valid_sessions = has_three_blocks.index[
+        has_three_blocks & (violations < max_violations)
+    ]
+
+    df_trials = trials.query(
+        "session in @valid_sessions and probabilityLeft == @probability_left"
+    )
+
+    return df_trials, valid_sessions
+```
+```{code-cell} ipython3
+:tags: [render-all]
+df_trials, valid_sessions = select_sessions(
+    trials,
+    probability_left=0.5,
+    max_violations=10,
 )
-
-# Boolean mask selecting sessions with < 10 invalid trials in the 50-50 block
-violations = (
-    trials.query("probabilityLeft == 0.5")
-          .groupby("session")["choice"]
-          .agg(lambda s: s.eq(viol_val).sum())
-)
-
-valid_sessions = has_three_blocks.index[has_three_blocks & (violations < 10)]
 
 print(f"# of sessions before restrictions {trials['session'].nunique()}")
-
-# Keep only the 50/50 trials from valid sessions (row order preserved by the filter)
-df_trials = trials.query("session in @valid_sessions and probabilityLeft == 0.5")
 
 print(f"# of sessions after restrictions {df_trials['session'].nunique()}")
 ```
 
-:::{admonition} What did we do?
-:class: note render-all
+:::{admonition} What did we do in this subsection?
+:class: attention render-all
 
 1. Downloaded the dataset
 2. Inspected its contents
@@ -287,22 +432,17 @@ print(f"# of sessions after restrictions {df_trials['session'].nunique()}")
 
 ## 02. Building the design matrix
 
-:::{admonition} What do we want to do?
-:class: note render-all
+:::{admonition} What do we want to do in this subsection?
+:class: attention render-all
 
-1. Define the predictors: signed contrast, previous choice, and WSLS.
-2. Prepare the inputs for the design matrix by computing signed contrast and filtering to valid choices.
-3. Introduce the `IdentityEval` and `HistoryConv` basis objects.
-4. Create basis functions for each predictor:
-   * signed contrast with `IdentityEval`
-   * previous choice with `HistoryConv`
-   * WSLS via basis multiplication
-5. Combine the bases into an additive basis and generate the design matrix with `compute_features`.
-6. Make sure all predictors are in the same numerical scale for comparison
+1. Explain the predictors we will use to build our design matrix and preprocess them
+2. Using `IdentityEval` and `HistoryConv` and multiplicative basis, we will define basis functions for each predictor and combine them in a single additive basis.
+3. We will end up with a design matrix, which we will generate using ```compute_features```, and this will be used as an input for the GLM-HMM.
 :::
 
+
 <div class="render-all">
-Now, with the valid sessions, we can compute the design matrix. In our case, we are interested in building a design matrix with three predictors: signed contrast, previous choice and win stay lose shift.
+We are interested in building a design matrix with three predictors: signed contrast, previous choice and win stay lose shift.
 </div>
 
 
@@ -314,9 +454,12 @@ Now, with the valid sessions, we can compute the design matrix. In our case, we 
 
 </div>
 
+<div class="render-presenter">
+
 The first predictor, signed contrast, encodes sensory evidence in 1D. Within this predictor, magnitude reflects strength of evidence and sign encodes direction. The second predictor, previous choice, is a lagged version of current choice, and it reflects serial dependence on decisions. The third predictor, win-stay lose-shift, reflects the interaction between past choice and outcome. If a choice was rewarded on the previous trial, the predictor signals to "stay" (repeat that choice); if it was not rewarded, it signals to "switch" to the other alternative.
 
 Let's go through the process of building the design matrix.
+</div>
 
 <div class="render-presenter, render-user">
 
@@ -337,9 +480,9 @@ session = df_trials['session'].values
 ```
 </div>
 
-### Preparation: get signed contrast 1d vector and subset valid sessions
+### Preparation: get signed contrast 1d vector and subset valid trials
 
-For the first predictor: signed contrast.
+We need to create our signed contrast 1d vector. 
 
 <div class="render-presenter, render-user">
 
@@ -347,6 +490,14 @@ For the first predictor: signed contrast.
 - Compute the signed contrast (difference between left and right)
 
 </div>
+
+
+<div class="render-presenter">
+
+- the way this function works is it grabs a numpy array and then replaces all of the instances where in it there is a nan value with the value that you choose. In our case we are choosing 0 because a stimulus not being shown in a side is the same as an stimulus being shown with 0 contrast, and we want to be able to make a difference between this value so we do not want nans.
+
+</div>
+
 
 
 <div class="render-user">
@@ -383,6 +534,16 @@ signed_contrast[select_session]
 
 </div>
 
+<div class="render-presenter">
+
+- np.flatnonzero(x) returns the indices where x is non-zero (or True if x is a boolean array).
+- `choices != viol_val` creates a boolean mask identifying valid trials (`True`) and violations (`False`)
+- `np.flatnonzero(...)` returns the indices where the mask is `True`
+- These indices can then be used to remove violation trials from all variables while keeping the remaining trials aligned
+
+
+
+</div>
 
 ```{code-cell} ipython3
 :tags: [render-all]
@@ -390,26 +551,21 @@ signed_contrast[select_session]
 valid_choices_idx = np.flatnonzero(choices != viol_val)
 ```
 
-
-### NeMoS basis objects of interest
-
-
-<div class="render-user, render-presenter">
-
-With those two elements we can compute our design matrix for this session, we can do this using nemos basis objects: 
-
-- ```IdentityEval``` uses the samples themselves as predictors; its purpose is simply to wrap them as a NeMoS object. We use this for the stimuli predictor. 
-
-- ```HistoryConv``` includes the past values of a sample as predictors (raw history). You choose how far back to go; here we only need one trial in the past. We use this to create the previous-choice predictor.
-
-</div>
 ### Predictor 1: stimulus contrast
-
 <div class="render-user, render-presenter">
 
-- A `IdentityEval` basis to include the signed contrast as is. This may seem pointless, but will allow us to add the basis and form the full design matrix in one go.
+Now we will create the basis object for the first predictor: signed contrast. We will do this using ```IdentityEval``` basis.
+
+- A `IdentityEval` basis is used to include the samples themselves as predictors. This may seem pointless, but it will allow us to have our predictor as a nemos basis object, later create an additive basis and form the full design matrix in one go.
 
 </div>
+
+<div class="render-presenter">
+- A `IdentityEval` basis is used to 
+include the samples themselves as predictors, and we will use it to include the signed contrast as is. This may seem pointless, but it will allow us to have our predictor as a nemos basis object, later create an additive basis and form the full design matrix in one go.
+
+</div>
+
 
 <div class="render-user">
 ```{code-cell} ipython3
@@ -420,16 +576,36 @@ stimuli_basis =
 
 ```{code-cell} ipython3
 # Identity basis for stimuli
-stimuli_basis = nmo.basis.IdentityEval()
+stimuli_basis = nmo.basis.IdentityEval(label = "stimuli_contrast")
 ```
+
+<div class="render-user">
+
+```{code-cell} ipython3
+# Example
+
+```
+</div>
+
+
+<div class="render-presenter">
+
+```{code-cell} ipython3
+# Example
+stimuli_basis.compute_features([1,2,3,4])
+```
+</div>
 
 ### Predictor 2: previous choice
 
+<div class="render-presenter">
+then, for our previous choice predictor we can use HistoryConv basis
+</div>
 <div class="render-user, render-presenter">
 
-What we need is:
+For our previous choice predictor we can use a ```HistoryConv```basis.
 
-- A `HistoryConv` basis to capture the choice history. We need a `window_size=1` to include the previous 1 choice as predictor.
+- ```HistoryConv``` includes the past values of a sample as predictors (raw history). You choose how far back to go; here we only need one trial in the past (`window_size=1`). We use this to create the previous-choice predictor.
 
 </div>
 
@@ -444,54 +620,82 @@ prev_choice_basis =
 
 ```{code-cell} ipython3
 # Prev history with history of 1
-prev_choice_basis = nmo.basis.HistoryConv(1)
+prev_choice_basis = nmo.basis.HistoryConv(1, label="previous_choice")
 ```
 
+</div>
+
+<div class="render-user">
+
+```{code-cell} ipython3
+# Example
+
+```
+</div>
+
+
+<div class="render-presenter">
+
+```{code-cell} ipython3
+# Example
+prev_choice_basis.compute_features([1,2,3,4])
+```
 </div>
 
 ### Predictor 3: WSLS
 
 <div class="render-user, render-presenter">
 
-This is an interaction of previous choice with previous reward. To capture interaction between variables, we can use a [multiplicative basis object](https://nemos.readthedocs.io/en/latest/background/basis/plot_02_ND_basis_function.html#n-dimensional-basis), which takes the outer product of the elements that compose it.
-
-- Win-stay lose-shift is the product of previous choice and previous reward, $WSLS_t = c_{t-1} \cdot r_{t-1}$.
-- We can use [basis multiplication](https://nemos.readthedocs.io/en/latest/background/basis/plot_02_ND_basis_function.html#n-dimensional-basis) to construct that predictor. 
+This is an interaction of previous choice with previous reward: $WSLS_t = c_{t-1} \cdot r_{t-1}$. To capture interaction between variables, we can use a [multiplicative basis object](https://nemos.readthedocs.io/en/latest/background/basis/plot_02_ND_basis_function.html#n-dimensional-basis), which
+in this case takes an element wise multiplication.
 
 </div>
 
+<div class="render-presenter">
+make remark that our wsls basis is still an object and we can peak into it by printing it 
+
+</div>
 <div class="render-user">
+
 ```{code-cell} ipython3
 # Create lagged reward basis
 prev_reward_basis = 
+
 # Multiply lagged reward basis with the lagged choice basis
 wsls_basis = 
+
+# Print
+
 ```
+
 </div>
+
+<div class="render-presenter">
 
 ```{code-cell} ipython3
 
 # Create lagged reward basis
 prev_reward_basis = nmo.basis.HistoryConv(1)
+
 # Multiply lagged reward basis with the lagged choice basis
 wsls_basis = prev_choice_basis*prev_reward_basis
+
+# Print
+print(wsls_basis)
 ```
+</div>
 
 
 ### Combining features and computing them
 
 <div class="render-user, render-presenter">
 
-Now that we have all our bases, we can combine them into an additive basis and apply the transformation to the input data using ```compute_features```. This method is a high-level interface for transforming input data with the basis functions. 
+Now that we have all our bases, we can combine them into an additive basis and apply the transformation to the input data using ```compute_features```.
 </div>
 
-<div class="render-user">
 
-Even though we need just a few lines of code, there is a lot going on. Here's a breakdown of what is happening:
-1. We will create an additive basis ```basis_object``` with our bases ```stimuli_basis```, ```wsls_basis``` and ```prev_choice_basis```. 
-2. ```wsls_basis``` is a multiplicative basis that takes two inputs.
-3. We will compute the features for our ```basis_object``` using ```compute_features```. Since the bases in our composite basis take a total of 4 inputs (```stimuli_basis``` takes 1 input, ```wsls_basis``` takes 2 inputs and ```prev_choice_basis``` takes 1 input), we need to pass 4 features to ```compute_features```.
-
+<div class="render-presenter">
+Now that we have all our bases, we can combine them into an additive basis and apply the transformation to the input data using ```compute_features```. This method is a high-level interface for transforming input data with the basis functions. 
 </div>
 
 <div class="render-user, render-presenter">
@@ -500,6 +704,17 @@ Even though we need just a few lines of code, there is a lot going on. Here's a 
 - Create the design matrix by calling `compute_features`. Select the valid trials by applying the `valid_choices_idx` boolean mask.
 
 </div>
+
+
+<div class="render-presenter">
+
+Even though we need just a few lines of code, there is a lot going on. Here's a breakdown of what is happening:
+1. We will create an additive basis ```basis_object``` with our bases ```stimuli_basis```, ```wsls_basis``` and ```prev_choice_basis```. 
+2. ```wsls_basis``` is a multiplicative basis that takes two inputs.
+3. We will compute the features for our ```basis_object``` using ```compute_features```. Since the bases in our composite basis take a total of 4 inputs (```stimuli_basis``` takes 1 input, ```wsls_basis``` takes 2 inputs and ```prev_choice_basis``` takes 1 input), we need to pass 4 features to ```compute_features```.
+
+</div>
+
 
 <div class="render-user">
 ```{code-cell} ipython3
@@ -625,19 +840,19 @@ workshop_utils.plot_design_matrix(X, choices, valid_choices_idx);
 ```
 
 
-:::{admonition} What did we do?
-:class: note render-all
+:::{admonition} What did we do in this subsection?
+:class: attention render-all
 
 1. We started with raw behavioral variables (choices, rewards, and contrasts) and identified the predictors we wanted to include: signed contrast, previous choice, and WSLS.
 2. Using ```IdentityEval```, ```HistoryConv``` and multiplicative basis, we defined basis functions for each predictor and combined them into a single additive basis.
-3. We ended with a design matrix, generated with ```compute_features```, ready to be used as input to the GLM.
+3. We ended with a design matrix, generated with ```compute_features```, ready to be used as input to the GLM-HMM.
 :::
 
 
 ## 03. Model fitting
 
-:::{admonition} What do we want to do?
-:class: note render-all
+:::{admonition} What do we want to do in this subsection?
+:class: attention render-all
 
 1. Convert choices so we can model them with a Bernoulli GLM-HMM
 2. Generated a vector containing session starts to use it in fitting
@@ -691,10 +906,15 @@ new_sess_mouse =
 new_sess_mouse = np.flatnonzero(session[1:] != session[:-1]) + 1
 ```
 
+
 <div class="render-presenter">
 
 Each trial has a session ID. By comparing each session ID to the previous one, we detect where the ID changes. Those change points mark the start of a new session. np.flatnonzero returns their indices, and +1 corrects for the one-step shift introduced by the comparison.
 
+</div>
+
+<div class="render-presenter">
+- If we had been using pynapple objects, the session starts and finishes would be automatically inherited from ??
 </div>
 
 
@@ -758,8 +978,8 @@ model.fit(
 
 That's all it takes!
 
-:::{admonition} What did we do?
-:class: note render-all
+:::{admonition} What did we do in this subsection?
+:class: attention render-all
 
 1. Started with the design matrix and behavioral choices.
 2. Converted choices into a binary format suitable for a Bernoulli GLM-HMM.
@@ -770,8 +990,8 @@ That's all it takes!
 
 ## 04. Interpreting the results
 
-:::{admonition} What do we want to do?
-:class: note render-all
+:::{admonition} What do we want to do in this subsection?
+:class: attention render-all
 
 1. Inspect the output of the model
 2. Interpret glm weights and transition matrix
@@ -1112,8 +1332,9 @@ workshop_utils.plot_accuracy_and_occupancy(
 
 According to state occupancy derived with the Viterbi algorithm, this mouse spent the majority of the trials (70%) in the engaged state and a lesser portion of trials in the other two states (30%). We can see that even though this mouse had an overall accuracy of 80.36%, it achieved a higher accuracy of 87.04% in the "engaged" state compared to 66.03% and 63.03% in the "bias left" and "bias right", respectively.
 
-:::{admonition} What did we do?
-:class: note render-all
+
+:::{admonition} What did we do in this subsection?
+:class: attention render-all
 
 1. Started with a fitted GLM-HMM.
 2. Inspected the model outputs, including the GLM weights and transition matrix.
