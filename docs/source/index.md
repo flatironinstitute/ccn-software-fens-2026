@@ -345,10 +345,14 @@ full/live_coding/*
 ```
 
 ```{toctree}
-:glob:
 :caption: Group projects
 :titlesonly:
-users/group_projects/*
+:maxdepth: 2
+full/group_projects/01_head_direction/index
+users/group_projects/02_population_analysis_with_nemos-users
+users/group_projects/03_calcium_imaging_analysis-users
+users/group_projects/04_place_cells-users
+users/group_projects/05_visual_coding-users
 ```
 
 ```{toctree}
