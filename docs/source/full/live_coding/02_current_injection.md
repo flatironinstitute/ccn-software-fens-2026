@@ -1157,9 +1157,7 @@ overfitting and so, while the difference is small here, it's possible that
 including the extra parameters has made us more sensitive to noise. To properly
 investigate whether that's the case, one should split the dataset into test and
 train sets, training the model on one subset of the data and testing it on
-another to test the model's generalizability. We'll see a version of this
-using `scikit-learn`'s pipelining and cross-validation machinery, will be shown
-in the [NeMoS Advanced notebook](sklearn-nb-full).
+another to test the model's generalizability.
 
 (current-inj-score-full)=
 ### Finishing up
@@ -1226,8 +1224,7 @@ We could try adding the following inputs to the model, alone or together:
   model explored here quite accurately captures the relationship between the
   current and the firing rate. Can we improve that somehow? We saw that adding
   the current history changed this relationship, but we can also change it
-  without including the history by using an `Eval` basis object. We'll see how
-  to do this in more detail in the [final notebook](sklearn-basis-full)
+  without including the history by using an `Eval` basis object. 
 
 <div class="render-all">
 
