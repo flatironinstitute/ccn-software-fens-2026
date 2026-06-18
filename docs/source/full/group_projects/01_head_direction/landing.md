@@ -1,4 +1,21 @@
+---
+jupytext:
+  text_representation:
+    extension: .md
+    format_name: myst
+    format_version: 0.13
+    jupytext_version: 1.18.1
+kernelspec:
+  name: python3
+  display_name: Python 3 (ipykernel)
+  language: python
+no-search: true
+orphan: true
+---
+
 # Head-direction cells: from pynapple to nemos GLM
+
+<div class="render-all">
 
 :::{note}
 The two parts are independent and can be completed in any order.
@@ -39,6 +56,7 @@ The pynapple documentation can be found [here](https://pynapple.org) and the nem
 
 ```{toctree}
 :titlesonly:
-part1_extracellular
-part2_calcium_imaging
+part1_extracellular-users.md
+part2_calcium_imaging-users.md
 ```
+</div>
