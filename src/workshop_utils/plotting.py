@@ -33,6 +33,7 @@ __all__ = [
     "plot_design_matrix",
     "plot_posteriors",
     "plot_accuracy_and_occupancy",
+    "plot_proba_left"
 ]
 
 
@@ -1327,3 +1328,20 @@ def plot_accuracy_and_occupancy(frac_occupancy, accuracies_to_plot):
     plt.tight_layout()
     plt.show()
     return fig
+
+
+def plot_proba_left(trials):
+    # Choose example session
+    sess_ex = '726b6915-e7de-4b55-a38e-ff4c461211d3'
+    # Subset session trials
+    trials_sess = trials[trials.session == sess_ex].reset_index()
+
+    # Plot
+    plt.plot(trials_sess["probabilityLeft"][:300])
+    plt.axvspan(0, 90, color="skyblue", alpha=0.3, label="first 90 trials")
+    plt.axvline(90, color="skyblue", linestyle="--")
+
+    plt.ylabel("P(stimulus on the left)")
+    plt.xlabel("Trial number")
+    plt.show()
+    return None
