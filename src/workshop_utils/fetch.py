@@ -2,12 +2,18 @@
 
 import click
 import nemos as nmo
+import os
+from one.api import ONE
 import pooch
 
 NEMOS_FILES = [
     "allen_478498617.nwb",
     "Mouse32-140822.nwb",
     "A0670-221213.nwb",
+]
+
+ONE_FILES = [
+    "CSHL_008"
 ]
 
 DATA_REGISTRY = {
@@ -22,7 +28,7 @@ DATA_URLS = {
 
 DATA_ENV = "NEMOS_DATA_DIR"
 
-DOWNLOADABLE_FILES = NEMOS_FILES + list(DATA_REGISTRY.keys())
+DOWNLOADABLE_FILES = NEMOS_FILES + list(DATA_REGISTRY.keys()) + ONE_FILES
 
 
 def fetch_data(dataset_name, path=None):
@@ -45,6 +51,11 @@ def fetch_data(dataset_name, path=None):
 
     if dataset_name in NEMOS_FILES:
         return nmo.fetch.fetch_data(dataset_name, path=path)
+
+    elif dataset_name in ONE_FILES:
+        ONE.setup(base_url='https://openalyx.internationalbrainlab.org', silent=True)
+        one = ONE(password = 'international', cache_dir=os.environ.get(DATA_ENV))
+        return one.load_aggregate('subjects', dataset_name, '_ibl_subjectTrials.table')
 
     else:
         if path is None:
