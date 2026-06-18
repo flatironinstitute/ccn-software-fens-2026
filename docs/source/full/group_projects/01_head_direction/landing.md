@@ -55,8 +55,8 @@ With **nemos** we will fit a GLM suited to continuous data:
 The pynapple documentation can be found [here](https://pynapple.org) and the nemos documentation [here](https://nemos.readthedocs.io/en/latest/).
 
 ```{toctree}
+:glob:
 :titlesonly:
-part1_extracellular-users.md
-part2_calcium_imaging-users.md
+part*
 ```
 </div>
