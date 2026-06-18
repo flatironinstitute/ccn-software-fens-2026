@@ -76,10 +76,16 @@ def main():
         for anchor in extract_anchors(f.read_text()):
             anchors[anchor] = name
 
+    allowed_parent_names = [f.name for f in docs_nb_dir.glob("*")]
     for f in docs_nb_dir.glob("**/*md"):
         if "index.md" in f.name:
             continue
-        output_f = (nb_dir / f.parent.name / f.name.replace("md", "ipynb")).absolute()
+        parent_name = pathlib.Path(f.parent.name)
+        parent = f.parent
+        while not any([parent.name.startswith(pn) for pn in allowed_parent_names]):
+            parent = parent.parent
+            parent_name = pathlib.Path(parent.name) / parent_name
+        output_f = (nb_dir / parent_name / f.name.replace("md", "ipynb")).absolute()
         output_f.parent.mkdir(parents=True, exist_ok=True)
         subprocess.run(
             ["jupytext", f.absolute(), "-o", output_f, "--from", "myst"], cwd=repo_dir

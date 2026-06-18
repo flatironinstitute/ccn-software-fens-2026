@@ -21,7 +21,11 @@ This notebook has had all its explanatory text removed and has not been run.
 
 repo_dir = pathlib.Path(__file__).parent.parent
 os.makedirs(repo_dir / "docs" / "source" / "_static" / "_check_figs", exist_ok=True)
-for md in (repo_dir / "docs/source/full").glob("*/*md"):
+for md in (repo_dir / "docs/source/full").glob("**/*md"):
+
+    if ".ipynb_checkpoints" in md.parts:
+        # don't do anything to ipynb checkpoints
+        continue
 
     # don't do this on index or if we've already removed text
     if "index" in md.stem or "stripped" in md.stem:
