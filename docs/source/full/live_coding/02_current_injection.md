@@ -46,12 +46,10 @@ warnings.filterwarnings(
 This notebook can be downloaded as **{nb-download}`02_current_injection.ipynb`**. See the button at the top right to download as markdown or pdf.
 :::
 
-:::{admonition} Jupyter Lab tip
+:::{admonition} Jupyter Lab Reminders
 :class: important render-all
 
-Newer versions of Jupyter Lab have addressed an issue with skipping around the notebook while scrolling. To make sure this fix is enabled, in the Jupyter Lab GUI, navigate to `Settings > Settings Editor > Notebook` and scroll down to the `Windowing mode` setting and make sure it is set to `contentVisibility`. 
-
-Also reminder to presenter: Go to `View > Appearance`, select `Simple Interface` and turn off everything else to hide as many bars as possible. And maybe activate `Presentation Mode`.
+Reminder to presenter: Go to `View > Appearance`, select `Simple Interface` and turn off everything else to hide as many bars as possible. And maybe activate `Presentation Mode`.
 
 And turn on `View > Render side-by-side` (shortcut `Shift+R`).
 :::
@@ -1159,9 +1157,7 @@ overfitting and so, while the difference is small here, it's possible that
 including the extra parameters has made us more sensitive to noise. To properly
 investigate whether that's the case, one should split the dataset into test and
 train sets, training the model on one subset of the data and testing it on
-another to test the model's generalizability. We'll see a version of this
-using `scikit-learn`'s pipelining and cross-validation machinery, will be shown
-in the [NeMoS Advanced notebook](sklearn-nb-full).
+another to test the model's generalizability.
 
 (current-inj-score-full)=
 ### Finishing up
@@ -1228,8 +1224,7 @@ We could try adding the following inputs to the model, alone or together:
   model explored here quite accurately captures the relationship between the
   current and the firing rate. Can we improve that somehow? We saw that adding
   the current history changed this relationship, but we can also change it
-  without including the history by using an `Eval` basis object. We'll see how
-  to do this in more detail in the [final notebook](sklearn-basis-full)
+  without including the history by using an `Eval` basis object. 
 
 <div class="render-all">
 
