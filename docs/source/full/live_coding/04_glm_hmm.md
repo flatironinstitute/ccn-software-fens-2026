@@ -632,7 +632,7 @@ prev_choice_basis =
 
 ```{code-cell} ipython3
 # Prev history with history of 1
-prev_choice_basis = nmo.basis.HistoryConv(1, label="previous_choice")
+prev_choice_basis = nmo.basis.HistoryConv(1)
 ```
 
 </div>
@@ -682,7 +682,7 @@ in this case takes an element wise multiplication.
 ```{code-cell} ipython3
 
 # Create lagged reward basis
-prev_reward_basis = nmo.basis.HistoryConv(1, label = "previous_reward")
+prev_reward_basis = nmo.basis.HistoryConv(1)
 
 # Multiply lagged reward basis with the lagged choice basis
 wsls_basis = prev_choice_basis*prev_reward_basis
@@ -878,10 +878,26 @@ By normalizing, we rescale the predictor to have mean 0 and standard deviation 1
 :::
 
 
-<div class="render-presenter">
+<div class="render-presenter, render-user">
 
 We can see our design matrix now!
 
+
+</div>
+
+<div class="render-presenter">
+
+Now that we've defined our covariates, we can visualize the design matrix that will be passed to the GLM.
+
+Each row corresponds to a trial, and each column corresponds to one predictor: signed contrast, WSLS, and previous choice. The color indicates the value of the predictor on each trial.
+
+For a given latent state, the model learns a weight for each of these predictors. These weights are combined with the design matrix to compute a linear score, (X\beta).
+
+A positive score favors a left choice, while a negative score favors a right choice. We then pass this score through a sigmoid function to convert it into a probability of choosing left.
+
+Finally, the Bernoulli observation model generates a choice. You can think of this as flipping a biased coin: if the probability of choosing left is high, the coin is more likely to land on left, but there is still some chance of choosing right.
+
+In the GLM-HMM, each latent state has its own set of weights, so different states can use the same predictors in different ways.
 
 </div>
 
@@ -908,12 +924,14 @@ workshop_utils.plot_design_matrix(X, choices, valid_choices_idx);
 :class: attention render-all
 
 1. Convert choices so we can model them with a Bernoulli GLM-HMM
-2. Generated a vector containing session starts to use it in fitting
+2. Generate a vector containing session starts to use it in fitting
 3. Initialize our ```GLMHMM``` object and fit our model with ```nmo.fit()```
 :::
 
+### Converting choices
+
 <div class="render-presenter">
-We are going to fit a Bernoulli GLM-HMM to model binary choices. 
+So the reason why we need to convert our choices is that we are going to fit a Bernoulli GLM-HMM to model binary choices. 
 
 - Our Bernoulli GLM expects binary responses: 0 or 1
 - In the dataset, choices are encoded as:
@@ -929,80 +947,174 @@ We are going to fit a Bernoulli GLM-HMM to model binary choices.
 </div>
 
 <div class="render-presenter, render-user">
+We are going to fit a Bernoulli GLM-HMM to model binary choices. For a Bernoulli GLM-HMM, observations must take values of 0 or 1. 
 
-- For a Bernoulli GLM-HMM, observations must take values of 0 or 1.
-- We therefore remap right choices from `-1` to `0`
-- Convert choices to 0s and 1s. 1: Left and 0: Right. You can use `np.where`.
-- `np.where(condition, value_if_true, value_if_false)`
+- In the current dataset, choices are encoded as:
+  - `1` = left choice
+  - `-1` = right choice
+- We therefore have to remap right choices from `-1` to `0`. We can do this using `np.where`
+  - `1` = left choice
+  - `0` =  right choice
 
 </div>
+
+
 
 <div class="render-user">
 ```{code-cell} ipython3
 choices = 
+print(choices)
 ```
 </div>
 
 
 ```{code-cell} ipython3
 choices = np.where(choices == -1, 0, choices)
+print(choices)
 ```
 
+### Creating session boundaries
 
-Importantly, we don't fit all 3000 trials as one continuous block. The data come as separate sessions of 100–300 trials, and we fit the model on all of them together. For our model to be accurate, we need to tell it when our session boundaries are: we don't want it to compute all sessions as if they were one. 
+<div class="render-presenter">
+Importantly, we don't fit all the trials as one continuous block. The data come as separate sessions that the mouse completed over multiple days, and we fit the model on all of them together. For our model to be accurate, we need to tell it when our session boundaries are: we don't want it to compute all sessions as if they were one. 
 
+<div class="render-presenter">
+Now we are going to use the flatnonzero numpy function to  get the indices of all session starts. 
+- We can see our array of session. `session` holds one session id per trial. 
+- Comparing `session[1:]` (every trial but the first) with `session[:-1]` (every trial but the last) yields a boolean array that is `True` wherever a trial's session id differs from the previous trial's — that is, exactly at the session boundaries. 
+- According to our print, session boundaries occur at trial 89
+- we can use `np.flatnonzero` to get the indices where this is `True`. we put our argument is our array session transition.
+, and we add `1` because the comparison is shifted by one (position `i` in the comparison corresponds to trial `i+1`). - The result is the array of indices at which a new session begins.
 
-In NeMoS we have two ways of indicating the beginning of a new session. You can use a Pynapple Tsd or TsdFrame to demarcate sessions, in which case session demarcations are inherited from the pynapple objects. Alternatively, when using a design matrix and a choice vector that are Numpy objects, it is necessary to pass a session indicator. This can be:
-- a boolean array or integer array of 1s and 0s indicating session starts, shape ``(n_samples,)``
-- an integer array of indices marking session starts, shape ``(n_sessions,)``
-- a pynapple.IntervalSet marking session epochs (requires either X or y to be a pynapple Tsd or TsdFrame to get timestamps)
+</div>
 
 <div class="render-presenter, render-user">
+We do not want to fit all the trials as one continous block! 
+- Create a vector containing the indices of each session start using ```np.flatnonzero()```
+</div>
 
-- Create a vector containing the indices of each session start.
+
+<div class="render-user, render-presenter">
+
+```{code-cell} ipython3
+# Print session array
+print(session)
+```
+
+</div>
+
+<div class="render-presenter">
+
+- According to our print, session boundaries occur at trial 89
+
+</div>
+
+<div class="render-user, render-presenter">
+
+```{code-cell} ipython3
+# Session transitions
+session_transition = session[1:] != session[:-1]
+# See that transition occurs at position 89
+print(session_transition[88:92])
+```
+
+</div>
+
+<div class="render-presenter">
+
+- we can use `np.flatnonzero` to get the indices where this is `True`. we put our argument is our array session transition.
 
 </div>
 
 <div class="render-user">
-```{code-cell} ipython3
-# Mark where session changes
-new_sess_mouse = 
-```
-</div>
 
 ```{code-cell} ipython3
-# Mark where session changes
-new_sess_mouse = np.flatnonzero(session[1:] != session[:-1]) + 1
+# Session starts lagged
+session_starts_lagged = # Complete
+print(session_starts_lagged[:10])
 ```
-
-
-<div class="render-presenter">
-
-Each trial has a session ID. By comparing each session ID to the previous one, we detect where the ID changes. Those change points mark the start of a new session. np.flatnonzero returns their indices, and +1 corrects for the one-step shift introduced by the comparison.
 
 </div>
 
 <div class="render-presenter">
-- If we had been using pynapple objects, the session starts and finishes would be automatically inherited from ??
+
+```{code-cell} ipython3
+# Session starts lagged
+session_starts_lagged = np.flatnonzero(session_transition)
+print(session_starts_lagged[:10])
+```
+
+</div>
+
+<div class="render-presenter">
+
+- we saw before that the transition occured at position 89, 
+- but if we confirm this by printing those sessions we see that the transition in fact occurs
+- in trial 90
+- this mismatch happens because the comparison is shifted by one
+</div>
+
+<div class="render-user, render-presenter">
+
+```{code-cell} ipython3
+# See that transition occurs at position 90
+print(session[88:92])
+```
+
+</div>
+
+<div class="render-presenter">
+
+- so to solve this we just add we add `1`. The result is the array of indices at which a new session begins.
+
+</div>
+
+<div class="render-user">
+
+```{code-cell} ipython3
+# Session starts
+session_starts = # Complete
+print(session_starts[:10])
+```
+
 </div>
 
 
-:::{admonition} How does this one-liner find the session starts?
-:class: note dropdown render-user
+<div class="render-presenter">
 
-`session` holds one session id per trial. Comparing `session[1:]` (every trial but the first) with `session[:-1]` (every trial but the last) yields a boolean array that is `True` wherever a trial's session id differs from the previous trial's — that is, exactly at the session boundaries. `np.flatnonzero` returns the indices where this is `True`, and we add `1` because the comparison is shifted by one (position `i` in the comparison corresponds to trial `i+1`). The result is the array of indices at which a new session begins.
-:::
+```{code-cell} ipython3
+# Session starts
+session_starts = session_starts_lagged + 1
+print(session_starts[:10])
+```
 
-Let's initialize the ```GLMHMM``` object. The only required parameter is the number of states. Ashwood et al. (2022) <span id="cite1d"></span><a href="#ref1d">[1d]</a> found that most mice used 3 decision-making states when performing this task. Following that work, we will initialize our ```GLMHMM``` object with 3 states.
-
-The likelihood of a GLM-HMM is non-convex, so the EM algorithm used to fit it can converge to different local optima depending on the starting parameters. NeMoS initializes the model for you: by default, the per-state intercepts are set to match the empirical choice probability, and the GLM coefficients are drawn from a Gaussian centered at zero with a small standard deviation. The `seed` argument controls this random draw, so in practice you should refit the model with several seeds and keep the solution with the highest log-likelihood.
+</div>
 
 
+### Initialize & fit GLM-HMM
 <div class="render-presenter, render-user">
 
-- Initialize the `GLMHMM` object with 3 states and `regularizer="Ridge"`.
-- Set seed for trying different initial parameters (`jax.random.PRNGKey(number)`).
-- By default, the intercept is set to match the empirical choice probability, and the coefficients are set as random gaussian centered at zero with small standard deviation.
+Let's initialize the ```GLMHMM``` object. The only required parameter is the number of states. Ashwood et al. (2022) <span id="cite1d"></span><a href="#ref1d">[1d]</a> found that most mice used 3 decision-making states when performing this task. Following that work, we will initialize our ```GLMHMM``` object with 3 states.  We will also set `regularizer="Ridge"` to penalize large weights. We will also set a seed for our initial parameters (`jax.random.PRNGKey(number)`).
+
+</div>
+
+<div class="render-presenter">
+
+Let's initialize the ```GLMHMM``` object. 
+
+- Initialize the `GLMHMM` object 
+- The only required parameter is # of states
+- ashwood and colleages found that most mice used 3 decision-making states when performing this task. 
+- we will initialize our ```GLMHMM``` object with 3 states, following that work
+- We will also set `regularizer="Ridge"` to penalize large weights
+- Set a seed for our intiial parameters
+- We need this seed because The likelihood of a GLM-HMM is non-convex, so the EM algorithm used to fit it can converge to different local optima depending on the starting parameters. 
+- NeMoS can set the initial parameters for you:
+- by default, the per-state intercepts are set to match the empirical choice probability, and the GLM coefficients are drawn from a Gaussian centered at zero with a small standard deviation. The `seed` argument controls this random draw, so in practice you should refit the model with several seeds and keep the solution with the highest log-likelihood.
+- Talk about transitions and initial probabilities as well.
+
+- We run
+- Observation bernoulli. even though we didnt specify. its default
 
 </div>
 
@@ -1010,6 +1122,8 @@ The likelihood of a GLM-HMM is non-convex, so the EM algorithm used to fit it ca
 <div class="render-user">
 ```{code-cell} ipython3
 n_states = 3
+seed=jax.random.PRNGKey(12)
+
 model = nmo.glm_hmm.GLMHMM(
 model
 ```
@@ -1017,23 +1131,30 @@ model
 
 ```{code-cell} ipython3
 n_states = 3
+seed=jax.random.PRNGKey(12)
 
 model = nmo.glm_hmm.GLMHMM(
-    n_states,
-    regularizer="Ridge",
+    n_states = n_states,
+    regularizer = "Ridge",
     # change this to try multiple init
-    seed=jax.random.PRNGKey(12), 
+    seed=seed, 
 )
 
 model
 ```
 
-Once we created our object, we can fit our model. The fit function takes two mandatory arguments: the design matrix ```X``` we created above and the ```choices```. Additionally, we will also include ```new_sess_mouse```, the new session indicator.
+<div class="render-presenter">
+
+Once we created our object, we can fit our model. The fit function takes two mandatory arguments: the design matrix ```X``` we created above and the ```choices```. Additionally, we will also include ```session_starts```, the new session indicator. only diff with normal glm
+
+
+</div>
+
 
 
 <div class="render-presenter, render-user">
 
-- Fit the model providing the `new_sess_mouse` markers as the `session_starts` argument of `model.fit`.
+- Fit the model providing the `session_starts` markers as the `session_starts` argument of `model.fit`.
 
 </div>
 
@@ -1041,11 +1162,34 @@ Once we created our object, we can fit our model. The fit function takes two man
 model.fit(
     X, 
     choices,
-    session_starts=new_sess_mouse
+    session_starts=session_starts
 )
 ```
 
+
 That's all it takes!
+
+<div class="render-presenter">
+
+- In NeMoS we have two ways of indicating the beginning of a new session. You can use a Pynapple Tsd or TsdFrame to demarcate sessions, in which case session demarcations are inherited from the pynapple objects. 
+- unlike what we are doing right now, in that case it is automatic.
+- Alternatively, when using a design matrix and a choice vector that are Numpy objects, it is necessary to pass a session indicator. This can be:
+- a boolean array or integer array of 1s and 0s indicating session starts, shape ``(n_samples,)``
+- an integer array of indices marking session starts, shape ``(n_sessions,)``
+- a pynapple.IntervalSet marking session epochs (requires either X or y to be a pynapple Tsd or TsdFrame to get timestamps)
+
+</div>
+
+
+:::{admonition} How would this be different if we were using Pynapple objects?
+:class: note render-all
+
+In NeMoS we have two ways of indicating the beginning of a new session. You can use a Pynapple Tsd or TsdFrame to demarcate sessions, in which case session demarcations are inherited from the pynapple objects. Alternatively, when using a design matrix and a choice vector that are Numpy objects, it is necessary to pass a session indicator. This can be:
+- a boolean array or integer array of 1s and 0s indicating session starts, shape ``(n_samples,)``
+- an integer array of indices marking session starts, shape ``(n_sessions,)``
+- a pynapple.IntervalSet marking session epochs (requires either X or y to be a pynapple Tsd or TsdFrame to get timestamps)
+
+:::
 
 :::{admonition} What did we do in this subsection?
 :class: attention render-all
@@ -1192,7 +1336,7 @@ To better understand the temporal structure of decision making behavior, we can 
 <div class="render-presenter, render-user">
 
 - Call `smooth_proba` to compute the smoothing posterior probabilities of the latent states.
-- Remember to provide the `session_starts=new_sess_mouse` parameter to mark the beginning of each session.
+- Remember to provide the `session_starts=session_starts` parameter to mark the beginning of each session.
 - Filter non-nan entries and check that the posterior sums to 1 over the states.
 
 </div>
@@ -1217,7 +1361,7 @@ print(
 posteriors = model.smooth_proba(
     X, 
     choices,
-    session_starts=new_sess_mouse
+    session_starts=session_starts
 )
 print(f"First five posteriors \n{posteriors[:5]} \n")
 
@@ -1286,7 +1430,7 @@ This method finds the single most likely sequence of hidden states that best exp
 <div class="render-presenter, render-user">
 
 - Get the most likely sequence of states given the observation by calling `decode_state`, which runs the Viterbi (also known as max-sum) algorithm.
-- Remember to provide the `session_starts=new_sess_mouse`
+- Remember to provide the `session_starts=session_starts`
 
 </div>
 
@@ -1305,7 +1449,7 @@ decoded_states
 decoded_states = model.decode_state(
     X,
     choices,
-    session_starts=new_sess_mouse,
+    session_starts=session_starts,
     state_format = "one-hot"
 )
 decoded_states
