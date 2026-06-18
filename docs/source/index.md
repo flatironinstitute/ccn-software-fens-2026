@@ -348,7 +348,7 @@ full/live_coding/*
 :caption: Group projects
 :titlesonly:
 :maxdepth: 2
-full/group_projects/01_head_direction/index
+users/group_projects/01_head_direction/index
 users/group_projects/04_place_cells-users
 users/group_projects/05_visual_coding-users
 ```

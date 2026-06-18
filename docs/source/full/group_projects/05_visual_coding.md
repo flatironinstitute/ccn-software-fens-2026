@@ -553,7 +553,7 @@ If you're having trouble coming up with features to include, here are some possi
 - Stimulus, using `stim`. (Review the [current injection ("Preparing data" header)](current-inj-prep-full) notebook.)
 - Stimulus onset. (Hint: you can use [numpy.diff](https://numpy.org/doc/stable/reference/generated/numpy.diff.html) to find when the stimulus transitions from off to on.)
 - Stimulus offset. (Hint: you can use [numpy.diff](https://numpy.org/doc/stable/reference/generated/numpy.diff.html) to find when the stimulus transitions from on to off.)
-- For multiple neurons: neuron-to-neuron coupling, using `units_counts`. (Refer back to the [the head direction notebook from the first day ("Fitting the Model" header)](head-direction-fit-full) to see an example of fitting coupling filters.)
+- For multiple neurons: neuron-to-neuron coupling, using `units_counts`. (Refer back to the [the head direction notebook from the first day ("Fitting the Model" header)](head-direction-fit-users) to see an example of fitting coupling filters.)
 
 For the stimuli predictors, you probably want to model white and black separately.
 
@@ -872,7 +872,7 @@ plot_pop_psth(peri_black[unit_id], "black", predictions=("red", peri_black_pred_
 - "Expand" model coefficients into filters.
 - Visualize these filters.
 
-When using basis functions, GLM coefficients are hard to interpret directly. Recall in the [current injection (search for "Visualize the current history model's learned filter")](visualize-filter-full) and [head direction (search for "We can plot the resluting response,")](head-direction-basis-full) notebooks; we can multiply these coefficients by the basis functions to create the filter for visualization. This can be done using [numpy.matmul](https://numpy.org/doc/stable/reference/generated/numpy.matmul.html) or [numpy.einsum](https://numpy.org/doc/stable/reference/generated/numpy.einsum.html).
+When using basis functions, GLM coefficients are hard to interpret directly. Recall in the [current injection (search for "Visualize the current history model's learned filter")](visualize-filter-full) and [head direction (search for "We can plot the resluting response,")](head-direction-basis-users) notebooks; we can multiply these coefficients by the basis functions to create the filter for visualization. This can be done using [numpy.matmul](https://numpy.org/doc/stable/reference/generated/numpy.matmul.html) or [numpy.einsum](https://numpy.org/doc/stable/reference/generated/numpy.einsum.html).
 
 If you get stuck here, you can expand the following dropdown to see a hint and then expand the one after that to see a possible way of doing this.
 
