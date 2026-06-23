@@ -37,14 +37,15 @@ This notebook can be downloaded as **{nb-download}`04_place_cells.ipynb`**. See 
 
 <div class="render-all">
     
-In this tutorial we will review more advanced applications of pynapple; tuning curves, signal processing, and decoding; as well as fitting GLMs to the data using NeMoS. We'll apply these methods to demonstrate and visualize some well-known physiological properties of hippocampal activity, specifically phase presession of place cells and sequential coordination of place cell activity during theta oscillations.
+In this series of notebooks, we will review more advanced applications of pynapple; tuning curves, signal processing, and decoding; as well as fitting GLMs to the data using NeMoS. We'll apply these methods to demonstrate and visualize some well-known physiological properties of hippocampal activity, specifically phase presession of place cells and sequential coordination of place cell activity during theta oscillations.
 
-This notebook is separated into 5 Parts:
-1. Data wrangling
-2. 1D neural tuning and model fitting
-3. Signal processing
-4. 2D neural tuning and model fitting
-5. Neural decoding
+This series is split into 4 notebooks:
+1. (This notebook) Data wrangling, 1D neural tuning, and model fitting
+2. Signal processing
+3. 2D neural tuning and model fitting
+4. Neural decoding
+
+You should all start by completing the first notebook. Afterwards, you can choose any notebook that looks most interesting to you!
 
 </div>
 
@@ -77,11 +78,9 @@ nap.nap_config.suppress_conversion_warnings = True
 
 <div class="render-all">  
     
-The data set we'll be looking at is from the manuscript [Diversity in neural firing dynamics supports both rigid and learned hippocampal sequences](https://www.science.org/doi/10.1126/science.aad1935). In this study, the authors collected electrophisiology data in rats across multiple sites in layer CA1 of hippocampus to extract the LFP alongside spiking activity of many simultaneous pyramidal units. In each recording session, data were collected while the rats explored a novel environment (a linear or circular track), as well as during sleep before and after exploration. In our following analyses, we'll focus on the exploration period of a single rat and recording session.
+The data set we'll use is from the study [Diversity in neural firing dynamics supports both rigid and learned hippocampal sequences](https://www.science.org/doi/10.1126/science.aad1935). In this study, the authors collected electrophisiology data from layer CA1 of hippocampus in rats. In each recording session, data were collected while the rats explored a novel environment (a linear or circular track), as well as during sleep before and after exploration. In our following analyses, we'll focus on the exploration period of a single rat and recording session.
 
-The full dataset for this study can be accessed on [DANDI](https://dandiarchive.org/dandiset/000044/0.210812.1516). Since the file size of a recording session can be large from the LFP saved for each recorded channel, we'll use a smaller file that contains the spiking activity and the LFP from a single, representative channel, which is hosted on [OSF](https://osf.io/2dfvp). This smaller file, like the original data, is saved as an [NWB](https://www.nwb.org) file.
-
-If you ran the workshop setup script, you should have this file downloaded already. If not, the function we'll use to fetch it will download it for you. This function is called `fetch_data`, and can be imported from the `workshop_utils` module. This function will give us the file path to where the data is stored. We can then use the pynapple function `load_file` to load in the data, which is able to handle the NWB file type.
+The full dataset for this study can be accessed on [DANDI](https://dandiarchive.org/dandiset/000044/0.210812.1516). and a smaller file containing only the session of interest can be found at [OSF](https://osf.io/2dfvp). Both datasets are saved as an [NWB](https://www.nwb.org) file.
 
 </div>
 
@@ -103,7 +102,7 @@ This returns a dictionary of pynapple objects that have been extracted from the 
 
 :::{admonition} Note
 :class: note render-all
-We will ignore the object `theta_phase` because we will be computing this ourselves later on in the exercise.
+We will ignore the object `theta_phase` because we will be computing this ourselves in a separate notebook.
 :::
 
 
@@ -111,7 +110,7 @@ We will ignore the object `theta_phase` because we will be computing this oursel
 
 <div class="render-all">  
     
-The `units` field is a [`TsGroup`](https://pynapple.org/generated/pynapple.TsGroup.html#pynapple.TsGroup): a collection of [`Ts`](https://pynapple.org/generated/pynapple.Ts.html#pynapple.Ts) objects containing the spike times of each unit, where the "Index" is the unit number or key. Each unit has the following metadata:
+The `units` field is a [`TsGroup`](https://pynapple.org/generated/pynapple.TsGroup.html#pynapple.TsGroup), where each unit has the following metadata:
 - **rate**: computed by pynapple, is the average firing rate of the neuron across all recorded time points.
 - **location**, **shank**, and **cell_type**: variables saved and imported from the original data set.
 
@@ -121,18 +120,6 @@ The `units` field is a [`TsGroup`](https://pynapple.org/generated/pynapple.TsGro
 :tags: [render-all]
 
 data["units"]
-```
-
-<div class="render-all">  
-
-We can access the spike times of a single unit by indexing the `TsGroup` by its unit number. For example, to access the spike times of unit 1:
-
-</div>
-
-```{code-cell} ipython3
-:tags: [render-all]
-
-data["units"][1]
 ```
 
 #### rem, nrem, and forward_ep
@@ -254,7 +241,7 @@ ax.legend([l1[0], l2[0]], ["animal position", "forward run epochs"])
 
 <div class="render-all"> 
 
-This plot confirms that positions are only recorded while the animal is moving along the track. Additionally, it is clear that the intervals in `forward_ep` capture only perios when the animal's position is increasing, during forward runs.
+This plot confirms that positions are only recorded while the animal is moving along the track. Additionally, it is clear that the intervals in `forward_ep` capture only periods when the animal's position is increasing, during forward runs.
 
 We'll save out the following variables that we'll need throughout the notebook.
 
@@ -793,4 +780,3 @@ fig.savefig("../../_static/_check_figs/pc-05.png", bbox_inches="tight")
 We can see that this model does a good job capturing both the position and the speed. 
 
 </div>
-
