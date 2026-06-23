@@ -5,6 +5,7 @@ os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = 'false'
 
 from .fetch import DOWNLOADABLE_FILES, fetch_data, fetch_all
 from .plotting import *
+from .preprocessing import *
 
 import pathlib
 
