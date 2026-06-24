@@ -45,7 +45,7 @@ This series is split into 4 notebooks:
 3. 2D neural tuning and model fitting
 4. Neural decoding
 
-You should all start by completing the first notebook. Afterwards, you can choose any notebook that looks most interesting to you!
+You should all start by completing the first notebook, which is split into two parts: 1) Data wrangling and 2) 1D neural tuning curves and model fitting. Afterwards, you can choose any notebook that looks most interesting to you!
 
 </div>
 
@@ -80,7 +80,7 @@ nap.nap_config.suppress_conversion_warnings = True
     
 The data set we'll use is from the study [Diversity in neural firing dynamics supports both rigid and learned hippocampal sequences](https://www.science.org/doi/10.1126/science.aad1935). In this study, the authors collected electrophisiology data from layer CA1 of hippocampus in rats. In each recording session, data were collected while the rats explored a novel environment (a linear or circular track), as well as during sleep before and after exploration. In our following analyses, we'll focus on the exploration period of a single rat and recording session.
 
-The full dataset for this study can be accessed on [DANDI](https://dandiarchive.org/dandiset/000044/0.210812.1516). and a smaller file containing only the session of interest can be found at [OSF](https://osf.io/2dfvp). Both datasets are saved as an [NWB](https://www.nwb.org) file.
+The full dataset for this study can be accessed on [DANDI](https://dandiarchive.org/dandiset/000044/0.210812.1516) and a smaller file containing only the session and data of interest can be found at [OSF](https://osf.io/2dfvp). Both datasets are saved as [NWB](https://www.nwb.org) files.
 
 </div>
 
@@ -96,7 +96,7 @@ print(data)
 
 <div class="render-all">  
     
-This returns a dictionary of pynapple objects that have been extracted from the NWB file. Let's explore each of these objects.
+This gives us a dictionary of pynapple objects that have been extracted from the NWB file. Let's explore each of these objects.
 
 </div>
 
@@ -150,8 +150,6 @@ data["forward_ep"]
 
 <div class="render-all"> 
 
-All intervals in `forward_ep` occur in the middle of the session, while `rem` and `nrem` both contain sleep epochs that occur before and after exploration. 
-    
 The following plot demonstrates how each of these labelled epochs are organized across the session.
 
 </div>
@@ -239,9 +237,9 @@ ax.set(xlim=[pos_start,pos_start+300], ylabel="Position (cm)", xlabel="Time (s)"
 ax.legend([l1[0], l2[0]], ["animal position", "forward run epochs"])
 ```
 
-<div class="render-all"> 
-
 This plot confirms that positions are only recorded while the animal is moving along the track. Additionally, it is clear that the intervals in `forward_ep` capture only periods when the animal's position is increasing, during forward runs.
+
+<div class="render-all"> 
 
 We'll save out the following variables that we'll need throughout the notebook.
 
@@ -264,7 +262,7 @@ For the following exercises, we'll only focus on periods labeled as forward runs
 
 </div>
 
-#### 1.1 Restrict `position` to `forward_ep` and confirm that there are no `nan` values in the restricted data set.
+#### 1. Restrict `position` to `forward_ep` and confirm that there are no `nan` values in the restricted data set.
 
 <div class="render-user">
 ```{code-cell} ipython3
@@ -280,13 +278,17 @@ np.any(np.isnan(position))
 
 <div class="render-all">
 
-We also want the speed of the animal during forward runs. We can get this using the pynapple object method [`derivative`](https://pynapple.org/generated/pynapple.Tsd.derivative.html). Conveniently, this will account for discontinuous intervals either in the time support, or by inputting the optional argument `ep`, the intervals over which you want to compute the derivative.
-
-Note, however, that the output of the derivative function is *velocity*. For the following analyses, we only care about the magnitude, or *speed*; therefore, we'll need to take the absolute value of the output to get our variable of interest.
+We also want the speed of the animal during forward runs. We can get this using the pynapple object method [`derivative`](https://pynapple.org/generated/pynapple.Tsd.derivative.html). This function accounts for discontinuous intervals either in the time support, or by providing the optional argument `ep`, the intervals over which you want to compute the derivative.
 
 </div>
 
-#### 1.2 Calculate velocity using the [`derivative`](https://pynapple.org/generated/pynapple.Tsd.derivative.html) method on position during forward runs. Use `np.abs` to convert the velocity into speed.
+#### 2. Calculate velocity using the [`derivative`](https://pynapple.org/generated/pynapple.Tsd.derivative.html) method on position during forward runs.
+
+<div class="render-all">
+
+- **NOTE:** `derivative` returns *velocity*. Use `np.abs` to convert the velocity into speed.
+
+</div>
 
 <div class="render-user">
 ```{code-cell} ipython3
@@ -305,7 +307,7 @@ To get a sense of what the LFP looks like while the animal runs down the linear 
 
 </div>
 
-#### 1.3 Create an interval set for forward run index 9, adding 2 seconds to the end of the interval. Restrict `lfp` and `position` to this epoch.
+#### 3. Create an interval set for forward run index 9, adding 2 seconds to the end of the interval. Restrict `lfp` and `position` to this epoch.
 
 <div class="render-user">
 ```{code-cell} ipython3
@@ -368,7 +370,7 @@ fig.savefig("../../_static/_check_figs/pc-01.png")
 
 <div class="render-all"> 
 
-As we would expect, there is a strong theta oscillation dominating the LFP while the animal runs down the track. This oscillation is weaker after the run is complete.
+There is a strong theta oscillation dominating the LFP while the animal runs down the track; this oscillation is weaker after the run is complete.
 
 </div>
 
@@ -377,13 +379,13 @@ As we would expect, there is a strong theta oscillation dominating the LFP while
 
 <div class="render-all">
 
-First, we will look at the place selectivity of each unit. We can find place firing preferences of each unit by using the function [`nap.compute_tuning_curves`](https://pynapple.org/generated/pynapple.process.tuning_curves.html#pynapple.process.tuning_curves.compute_tuning_curves).
+Next, we'll compute place selectivity of each unit. We can find place firing preferences of each unit by using the function [`nap.compute_tuning_curves`](https://pynapple.org/generated/pynapple.process.tuning_curves.html#pynapple.process.tuning_curves.compute_tuning_curves).
 
 We'll filter for units that fire at least 1 Hz and at most 10 Hz when the animal is running forward along the linear track. This will select for units that are active during our window of interest and eliminate putative interneurons (i.e. fast-firing inhibitory neurons that don't usually have place selectivity). Afterwards, we'll compute the tuning curves for these sub-selected units over position.
 
 </div>
 
-#### 2.1 Restrict `spikes` to `forward_ep` and select for units whose rate is at least 1 Hz and at most 10 Hz
+#### 4. Restrict `spikes` to `forward_ep` and select for units whose rate is at least 1 Hz and at most 10 Hz
 
 <div class="render-user">
 ```{code-cell} ipython3
@@ -396,7 +398,7 @@ good_spikes =
 good_spikes = spikes[(spikes.restrict(forward_ep).rate >= 1) & (spikes.restrict(forward_ep).rate <= 10)]
 ```
 
-#### 2.2 Compute tuning curves with respect to `position` for units in `good_spikes`.
+#### 5. Compute tuning curves with respect to `position` for units in `good_spikes`.
 
 <div class="render-all">
 
@@ -462,7 +464,7 @@ Let's repeat this exercise, but instead compute tuning curves as a function of *
 
 </div>
 
-#### 2.3 Compute tuning curves with respect to `speed` for units in `good_spikes`.
+#### 6. Compute tuning curves with respect to `speed` for units in `good_spikes`.
 
 <div class="render-all">
 
@@ -509,32 +511,21 @@ fig.savefig("../../_static/_check_figs/pc-03.png")
 
 <div class="render-all">
 
-These neurons all show both position and speed tuning, and we see that the animal's speed and position are highly correlated. How can we disentangle which variable is responsible for driving neural activity? This is where NeMoS comes in handy: GLMs can help us model responses to multiple, potentially correlated predictors. 
+In these example units, and we see that the speed and position tuning are highly correlated. How can we disentangle which variable is responsible for driving neural activity? This is where NeMoS comes in handy: GLMs can help us model responses to multiple, potentially correlated predictors. 
+
+</div>
+
++++
+
+### Estimating tuning curves using a population GLM
+
+<div class="render-all">
 
 The goal of the remaining exercises in this section is to fit a PopulationGLM including both position and speed as predictors, and check if this model accurately captures the tuning curves of the neurons.
 
 </div>
 
-### Estimating tuning curves using a population GLM
-
-<div class="render-all">
-    
-As we've seen before, we will use basis objects to represent the input values.  In previous tutorials, we've used the `Conv` basis objects to represent the time-dependent effects we were looking to capture. Here, we're trying to capture the non-linear relationship between our input variables and firing rate, so we want the `Eval` objects. In these circumstances, you should look at the tuning you're trying to capture and compare to the [basis kernels (visualized in NeMoS docs)](https://nemos.readthedocs.io/en/latest/background/basis/README.html#): you want your tuning to be capturable by a linear combination of them.
-
-In this case, several of these would probably work; we will use [`BSplineEval`](https://nemos.readthedocs.io/en/latest/generated/basis/nemos.basis.BSplineEval.html#nemos.basis.BSplineEval) for both, though with different numbers of basis functions.
-
-Additionally, since we have two different inputs, we'll need two separate basis objects.
-
-</div>
-
-:::{note}
-:class: render-all
-
-This afternoon, we'll show how to cross-validate across basis identity, which you can use to choose the basis.
-
-:::
-
-#### 2.4 Compute observations by counting spikes, using the pynapple method `count`, on our `TsGroup` of spike times, `good_spikes`.
+#### 7. Compute observations by counting spikes, using the pynapple method `count`, on our `TsGroup` of spike times, `good_spikes`.
 
 <div class="render-all">
 
@@ -558,17 +549,11 @@ counts = good_spikes[neurons].count(bin_size, ep=forward_ep)
 
 <div class="render-all">
 
-By using this bin size for spike counts, `counts` will have a much higher sampling rate, and therefore have more data points, than our features, `position` and `speed`. We'll need to upsample our features to match the number of time points in `counts` in order to create a design matrix of the correct size to fit the model. We can achieve this by using the pynapple object method [`interpolate`](https://pynapple.org/generated/pynapple.Tsd.interpolate.html). This method will linearly interpolate new position and speed samples between existing samples at timestamps given by another pynapple object, in our case by `counts`.
+By using this bin size for spike counts, `counts` will have a much higher sampling rate, and therefore have more data points, than our features, `position` and `speed`. We need to upsample our features to match the number of time points in `counts` in order to create a design matrix of the correct size to fit the model. We can achieve this by using the pynapple object method [`interpolate`](https://pynapple.org/generated/pynapple.Tsd.interpolate.html). This method will linearly interpolate new position and speed samples between existing samples at timestamps given by another pynapple object, in our case by `counts`.
 
 </div>
 
-#### 2.5 Upsample `position` and `speed` using the pynapple method [`interpolate`](https://pynapple.org/generated/pynapple.Tsd.interpolate.html) with the time stamps from `counts`.
-
-<div class="render-all">
-
-- Use a `bin_size` of 10 ms (0.01s)
-
-</div>
+#### 8. Upsample `position` and `speed` using the pynapple method [`interpolate`](https://pynapple.org/generated/pynapple.Tsd.interpolate.html) with the time stamps from `counts`.
 
 <div class="render-user">
 ```{code-cell} ipython3
@@ -582,25 +567,13 @@ up_position = position.interpolate(counts)
 up_speed = speed.interpolate(counts)
 ```
 
-<div class="render-all">
-    
 As we've seen before, we will use basis objects to represent the input values.  In previous tutorials, we've used the `Conv` basis objects to represent the time-dependent effects we were looking to capture. Here, we're trying to capture the non-linear relationship between our input variables and firing rate, so we want the `Eval` objects. In these circumstances, you should look at the tuning you're trying to capture and compare to the [basis kernels (visualized in NeMoS docs)](https://nemos.readthedocs.io/en/latest/background/basis/README.html#): you want your tuning to be capturable by a linear combination of them.
 
-In this case, several of these would probably work; we will use [`BSplineEval`](https://nemos.readthedocs.io/en/latest/generated/basis/nemos.basis.BSplineEval.html#nemos.basis.BSplineEval) for both, though with different numbers of basis functions.
+In this case, several of these would probably work; here we will use [`BSplineEval`](https://nemos.readthedocs.io/en/latest/generated/basis/nemos.basis.BSplineEval.html#nemos.basis.BSplineEval). Since we have two different inputs, we'll need two separate basis objects.
 
-Additionally, since we have two different inputs, we'll need two separate basis objects.
-
-</div>
-
-:::{note}
-:class: render-all
-
-This afternoon, we'll show how to cross-validate across basis identity, which you can use to choose the basis.
-
-:::
 
 (basis-eval-place-cells-full)=
-#### 2.6 Instantiate the basis by doing the following:
+#### 9. Instantiate the basis by doing the following:
 
 <div class="render-all">
 
@@ -647,7 +620,7 @@ To do this, we can use [NeMoS basis composition](https://nemos.readthedocs.io/en
 
 </div>
 
-#### 2.7 Create an additive basis by adding together `position_basis` and `speed_basis`.
+#### 10. Create an additive basis by adding together `position_basis` and `speed_basis`.
 
 <div class="render-user">
 ```{code-cell} ipython3
@@ -659,7 +632,7 @@ additive_basis =
 additive_basis = position_basis + speed_basis
 ```
 
-#### 2.8 Create a design matrix by passing `up_position` and `up_speed` to the basis method `compute_features`
+#### 11. Create a design matrix by passing `up_position` and `up_speed` to the basis method `compute_features`
 
 <div class="render-all">
 
@@ -686,7 +659,7 @@ As we've done before, we can now use the Poisson GLM from NeMoS to learn the com
 
 </div>
 
-#### 2.9 Fit a GLM by doing the following:
+#### 12. Fit a GLM by doing the following:
 
 <div class="render-all">
 
@@ -719,7 +692,7 @@ Let's check first if our model can accurately predict the tuning curves we displ
 
 </div>
 
-#### 2.10 Use [`predict`](https://nemos.readthedocs.io/en/latest/generated/glm/nemos.glm.GLM.predict.html#nemos.glm.GLM.predict) to calculated the predicted firing rate of our model. Use the predicted rate to compute predicted tuning curves using [`nap.compute_tuning_curves`](https://pynapple.org/generated/pynapple.process.tuning_curves.html#pynapple.process.tuning_curves.compute_tuning_curves).
+#### 13. Use [`predict`](https://nemos.readthedocs.io/en/latest/generated/glm/nemos.glm.GLM.predict.html#nemos.glm.GLM.predict) to calculated the predicted firing rate of our model. Use the predicted rate to compute predicted tuning curves using [`nap.compute_tuning_curves`](https://pynapple.org/generated/pynapple.process.tuning_curves.html#pynapple.process.tuning_curves.compute_tuning_curves).
 
 <div class="render-all">
 
