@@ -8,6 +8,7 @@ orphan:
 For instructors / TAs **only**.
 
 ```{toctree}
+:glob:
 :titlesonly:
 :maxdepth: 2
 *

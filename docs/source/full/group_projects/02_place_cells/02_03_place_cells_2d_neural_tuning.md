@@ -111,9 +111,12 @@ theta_band = nap.apply_bandpass_filter(lfp, (6.0, 12.0), fs=sample_rate)
 theta_phase = nap.compute_hilbert_phase(theta_band)
 ```
 
-</div>
+
+<div class="render-all">
 
 Now we need to combine `position` and `theta_phase` into a `TsdFrame`. For this to work, both variables must have the same length. We can achieve this by upsampling `position` to the length of `theta_phase` using the pynapple object method [`interpolate`](https://pynapple.org/generated/pynapple.Tsd.interpolate.html).
+
+</div>
 
 #### 1. Interpolate `position` to the time points of `theta_phase`.
 

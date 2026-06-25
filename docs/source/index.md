@@ -345,6 +345,7 @@ full/live_coding/*
 ```
 
 ```{toctree}
+:glob:
 :caption: Group projects
 :titlesonly:
 :maxdepth: 2

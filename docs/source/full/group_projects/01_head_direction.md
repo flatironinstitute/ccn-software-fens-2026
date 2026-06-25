@@ -54,6 +54,8 @@ With **nemos** we will fit a GLM suited to continuous data:
 
 The pynapple documentation can be found [here](https://pynapple.org) and the nemos documentation [here](https://nemos.readthedocs.io/en/latest/).
 
+You can find each part by following the links below if you're on the website, or by navegating to the "01_head_direction" folder for locally downloaded notebooks.
+
 ```{toctree}
 :glob:
 :titlesonly:
