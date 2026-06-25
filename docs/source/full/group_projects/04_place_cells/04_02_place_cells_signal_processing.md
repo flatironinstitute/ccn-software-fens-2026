@@ -33,7 +33,7 @@ warnings.filterwarnings(
 This notebook can be downloaded as **{nb-download}`04_place_cells.ipynb`**. See the button at the top right to download as markdown or pdf.
 :::
 
-# Analyzing hippocampal place cells with Pynapple and NeMoS
+# Signal processing
 
 <div class="render-all">
     
@@ -173,13 +173,13 @@ ax.legend([p1[0], p2[0]],["raw LFP","animal position"])
 ```{code-cell} ipython3
 :tags: [hide-input]
 
-fig.savefig("../../_static/_check_figs/pc-06.png")
+fig.savefig("../../../_static/_check_figs/pc-06.png")
 ```
 
 <div class="render-user">
 :::{admonition} Figure check
 :class: dropdown
-![](../../_static/_check_figs/pc-06.png)
+![](../../../_static/_check_figs/pc-06.png)
 :::
 </div>
 
@@ -256,13 +256,13 @@ plt.legend();
 ```{code-cell} ipython3
 :tags: [hide-input]
 
-fig.savefig("../../_static/_check_figs/pc-07.png")
+fig.savefig("../../../_static/_check_figs/pc-07.png")
 ```
 
 <div class="render-user">
 :::{admonition} Figure check
 :class: dropdown
-![](../../_static/_check_figs/pc-07.png)
+![](../../../_static/_check_figs/pc-07.png)
 :::
 </div>
 
@@ -313,13 +313,13 @@ ax.legend([p1[0],p2[0]],["theta phase","filtered LFP"])
 ```{code-cell} ipython3
 :tags: [hide-input]
 
-fig.savefig("../../_static/_check_figs/pc-08.png")
+fig.savefig("../../../_static/_check_figs/pc-08.png")
 ```
 
 <div class="render-user">
 :::{admonition} Figure check
 :class: dropdown
-![](../../_static/_check_figs/pc-08.png)
+![](../../../_static/_check_figs/pc-08.png)
 :::
 </div>
 
@@ -370,13 +370,13 @@ axs[1].legend()
 ```{code-cell} ipython3
 :tags: [hide-input]
 
-fig.savefig("../../_static/_check_figs/pc-09.png")
+fig.savefig("../../../_static/_check_figs/pc-09.png")
 ```
 
 <div class="render-user">
 :::{admonition} Figure check
 :class: dropdown
-![](../../_static/_check_figs/pc-09.png)
+![](../../../_static/_check_figs/pc-09.png)
 :::
 </div>
 
@@ -429,13 +429,13 @@ axs[2].legend()
 ```{code-cell} ipython3
 :tags: [hide-input]
 
-fig.savefig("../../_static/_check_figs/pc-10.png")
+fig.savefig("../../../_static/_check_figs/pc-10.png")
 ```
 
 <div class="render-user">
 :::{admonition} Figure check
 :class: dropdown
-![](../../_static/_check_figs/pc-10.png)
+![](../../../_static/_check_figs/pc-10.png)
 :::
 </div>
 
@@ -477,13 +477,13 @@ axs.set_xlabel("Position (cm)")
 ```{code-cell} ipython3
 :tags: [hide-input]
 
-fig.savefig("../../_static/_check_figs/pc-11.png")
+fig.savefig("../../../_static/_check_figs/pc-11.png")
 ```
 
 <div class="render-user">
 :::{admonition} Figure check
 :class: dropdown
-![](../../_static/_check_figs/pc-11.png)
+![](../../../_static/_check_figs/pc-11.png)
 :::
 </div>
 

@@ -33,7 +33,7 @@ warnings.filterwarnings(
 This notebook can be downloaded as **{nb-download}`04_place_cells.ipynb`**. See the button at the top right to download as markdown or pdf.
 :::
 
-# Analyzing hippocampal place cells with Pynapple and NeMoS
+# 2D neural tuning and model fitting
 
 <div class="render-all">
     
@@ -196,13 +196,13 @@ p = tc_norm.sel(unit=neurons).plot(x="position", y="phase", col="unit", col_wrap
 ```{code-cell} ipython3
 :tags: [hide-input]
 
-p.fig.savefig("../../_static/_check_figs/pc-12.png")
+p.fig.savefig("../../../_static/_check_figs/pc-12.png")
 ```
 
 <div class="render-user">
 :::{admonition} Figure check
 :class: dropdown
-![](../../_static/_check_figs/pc-12.png)
+![](../../../_static/_check_figs/pc-12.png)
 :::
 </div>
 
@@ -382,13 +382,13 @@ fig = doc_plots.plot_position_phase_speed_tuning(
 ```{code-cell} ipython3
 :tags: [hide-input]
 
-fig.savefig("../../_static/_check_figs/pc-13.png")
+fig.savefig("../../../_static/_check_figs/pc-13.png")
 ```
 
 <div class="render-user">
 :::{admonition} Figure check
 :class: dropdown
-![](../../_static/_check_figs/pc-13.png)
+![](../../../_static/_check_figs/pc-13.png)
 :::
 </div>
 

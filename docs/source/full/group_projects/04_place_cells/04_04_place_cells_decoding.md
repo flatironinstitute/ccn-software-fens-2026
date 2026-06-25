@@ -33,7 +33,7 @@ warnings.filterwarnings(
 This notebook can be downloaded as **{nb-download}`04_place_cells.ipynb`**. See the button at the top right to download as markdown or pdf.
 :::
 
-# Analyzing hippocampal place cells with Pynapple and NeMoS
+# Neural decoding
 
 <div class="render-all">
     
@@ -204,13 +204,13 @@ ax.set(xlabel="Time (s)", ylabel="Position (cm)", );
 ```{code-cell} ipython3
 :tags: [hide-input]
 
-fig.savefig("../../_static/_check_figs/pc-15.png")
+fig.savefig("../../../_static/_check_figs/pc-15.png")
 ```
 
 <div class="render-user">
 :::{admonition} Figure check
 :class: dropdown
-![](../../_static/_check_figs/pc-15.png)
+![](../../../_static/_check_figs/pc-15.png)
 :::
 </div>
 
@@ -270,13 +270,13 @@ ax.set(xlabel="Time (s)", ylabel="Position (cm)", );
 ```{code-cell} ipython3
 :tags: [hide-input]
 
-fig.savefig("../../_static/_check_figs/pc-16.png")
+fig.savefig("../../../_static/_check_figs/pc-16.png")
 ```
 
 <div class="render-user">
 :::{admonition} Figure check
 :class: dropdown
-![](../../_static/_check_figs/pc-16.png)
+![](../../../_static/_check_figs/pc-16.png)
 :::
 </div>
 
@@ -329,13 +329,13 @@ fig.supxlabel("Time (s)");
 ```{code-cell} ipython3
 :tags: [hide-input]
 
-fig.savefig("../../_static/_check_figs/pc-17.png")
+fig.savefig("../../../_static/_check_figs/pc-17.png")
 ```
 
 <div class="render-user">
 :::{admonition} Figure check
 :class: dropdown
-![](../../_static/_check_figs/pc-17.png)
+![](../../../_static/_check_figs/pc-17.png)
 :::
 </div>
 

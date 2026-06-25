@@ -33,7 +33,7 @@ warnings.filterwarnings(
 This notebook can be downloaded as **{nb-download}`04_place_cells.ipynb`**. See the button at the top right to download as markdown or pdf.
 :::
 
-# Analyzing hippocampal place cells with Pynapple and NeMoS
+# Data wrangling, 1D neural tuning, and model fitting
 
 <div class="render-all">
     
@@ -358,13 +358,13 @@ axs[1].legend([l1,l2], ["position","speed"])
 ```{code-cell} ipython3
 :tags: [hide-input]
 
-fig.savefig("../../_static/_check_figs/pc-01.png")
+fig.savefig("../../../_static/_check_figs/pc-01.png")
 ```
 
 <div class="render-user">
 :::{admonition} Figure check
 :class: dropdown
-![](../../_static/_check_figs/pc-01.png)
+![](../../../_static/_check_figs/pc-01.png)
 :::
 </div>
 
@@ -446,13 +446,13 @@ p.set_ylabels("firing rate (Hz)")
 ```{code-cell} ipython3
 :tags: [hide-input]
 
-p.fig.savefig("../../_static/_check_figs/pc-02.png")
+p.fig.savefig("../../../_static/_check_figs/pc-02.png")
 ```
 
 <div class="render-user">
 :::{admonition} Figure check
 :class: dropdown
-![](../../_static/_check_figs/pc-02.png)
+![](../../../_static/_check_figs/pc-02.png)
 :::
 </div>
 
@@ -498,13 +498,13 @@ fig = workshop_utils.plot_position_speed(position, speed, place_fields.sel(unit=
 ```{code-cell} ipython3
 :tags: [hide-input]
 
-fig.savefig("../../_static/_check_figs/pc-03.png")
+fig.savefig("../../../_static/_check_figs/pc-03.png")
 ```
 
 <div class="render-user">
 :::{admonition} Figure check
 :class: dropdown
-![](../../_static/_check_figs/pc-03.png)
+![](../../../_static/_check_figs/pc-03.png)
 :::
 </div>
 
@@ -602,13 +602,13 @@ fig = workshop_utils.plot_pos_speed_bases(position_basis, speed_basis)
 ```{code-cell} ipython3
 :tags: [hide-input]
 
-fig.savefig("../../_static/_check_figs/pc-04.png")
+fig.savefig("../../../_static/_check_figs/pc-04.png")
 ```
 
 <div class="render-user">
 :::{admonition} Figure check
 :class: dropdown
-![](../../_static/_check_figs/pc-04.png)
+![](../../../_static/_check_figs/pc-04.png)
 :::
 </div>
 
@@ -738,13 +738,13 @@ fig = workshop_utils.plot_position_speed_tuning(place_fields.sel(unit=neurons), 
 ```{code-cell} ipython3
 :tags: [hide-input]
 
-fig.savefig("../../_static/_check_figs/pc-05.png", bbox_inches="tight")
+fig.savefig("../../../_static/_check_figs/pc-05.png", bbox_inches="tight")
 ```
 
 <div class="render-user">
 :::{admonition} Figure check
 :class: dropdown
-![](../../_static/_check_figs/pc-05.png)
+![](../../../_static/_check_figs/pc-05.png)
 :::
 </div>
 
