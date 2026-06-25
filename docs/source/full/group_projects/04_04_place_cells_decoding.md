@@ -37,14 +37,15 @@ This notebook can be downloaded as **{nb-download}`04_place_cells.ipynb`**. See 
 
 <div class="render-all">
     
-In this tutorial we will review more advanced applications of pynapple; tuning curves, signal processing, and decoding; as well as fitting GLMs to the data using NeMoS. We'll apply these methods to demonstrate and visualize some well-known physiological properties of hippocampal activity, specifically phase presession of place cells and sequential coordination of place cell activity during theta oscillations.
+In this series of notebooks, we will review more advanced applications of pynapple; tuning curves, signal processing, and decoding; as well as fitting GLMs to the data using NeMoS. We'll apply these methods to demonstrate and visualize some well-known physiological properties of hippocampal activity, specifically phase presession of place cells and sequential coordination of place cell activity during theta oscillations.
 
-This notebook is separated into 5 Parts:
-1. Data wrangling
-2. 1D neural tuning and model fitting
-3. Signal processing
-4. 2D neural tuning and model fitting
-5. Neural decoding
+This series is split into 4 notebooks:
+1. Data wrangling, 1D neural tuning, and model fitting
+2. Signal processing
+3. 2D neural tuning and model fitting
+4. (This notebook) Neural decoding
+
+This notebook assumes you have already gone through the first notebook to explore the data. We'll reinitialize variables created in the first notebook that will be used here.
 
 </div>
 
@@ -70,49 +71,16 @@ plt.style.use(nmo.styles.plot_style)
 
 # configure pynapple to ignore conversion warning
 nap.nap_config.suppress_conversion_warnings = True
-```
 
-```{code-cell} ipython3
-:tags: [render-all]
-
-# fetch file path
+# code needed from first notebook
 path = workshop_utils.fetch_data("Achilles_10252013_EEG.nwb")
-# load data with pynapple
 data = nap.load_file(path)
-print(data)
-```
-
-```{code-cell} ipython3
-:tags: [render-all]
-
-position = data["position"]
-lfp = data["eeg"][:,0]
-spikes = data["units"]
 forward_ep = data["forward_ep"]
-```
-
-```{code-cell} ipython3
-position = position.restrict(forward_ep)
-np.any(np.isnan(position))
-```
-
-```{code-cell} ipython3
-speed = np.abs(position.derivative())
-```
-
-```{code-cell} ipython3
-ex_ep = nap.IntervalSet(start=forward_ep[9].start, end=forward_ep[9].end+2)
-ex_lfp = lfp.restrict(ex_ep)
-ex_position = position.restrict(ex_ep)
-ex_speed = speed.restrict(ex_ep)
-
+position = data["position"].restrict(forward_ep)
+lfp = data["eeg"][:,0].restrict(forward_ep)
+spikes = data["units"]
 ex_run_ep = nap.IntervalSet(start=forward_ep[9].start, end=forward_ep[9].end)
-unit = 177
-```
-
-```{code-cell} ipython3
-sample_rate = 1250
-theta_band = nap.apply_bandpass_filter(lfp, (6.0, 12.0), fs=sample_rate)
+ex_position = position.restrict(ex_run_ep)
 ```
 
 ## Part 5: Neural decoding
@@ -120,7 +88,7 @@ theta_band = nap.apply_bandpass_filter(lfp, (6.0, 12.0), fs=sample_rate)
 
 <div class="render-all">
 
-Finally we'll do a popular analysis in the rat hippocampus sphere: Bayesian decoding. This analysis is an elegent application of Bayes' rule in predicting the animal's location (or other behavioral variables) given neural activity at some point in time. Refer to the dropdown box below for a more in-depth explanation.
+In this notebook we'll do a popular analysis in the rat hippocampus sphere: Bayesian decoding. This analysis is an elegent application of Bayes' rule in predicting the animal's location (or other behavioral variables) given neural activity at some point in time. Refer to the dropdown box below for a more in-depth explanation.
 
 :::{admonition} Background: Bayesian decoding
 :class: dropdown
@@ -168,9 +136,9 @@ If this method looks daunting, we have some good news: pynapple has it implement
 Generally this method is cross-validated, which means you train the model on one set of data and test the model on a different, held-out data set. For Bayesian decoding, the "model" refers to the model *likelihood*, which is computed from the tuning curves. 
 
 If we want to decode an example run down the track, our training set should omit this run before computing the tuning curves. We can do this by using the IntervalSet method `set_diff`, to take out the example run epoch from all run epochs. Next, we'll restrict our data to these training epochs and re-compute the place fields using `nap.compute_tuning_curves`. We'll also apply a Gaussian smoothing filter to the place fields, which will smooth our decoding results down the line.
-
-The code cell below will do these steps for you.
 :::
+
+The code below will redefine the position tuning curves that we originally computed in the first notebook with two changes: 1) they leave out the period we will decode (see above), and 2) they're computed over *all* units, which can help with decoder accuracy.
 
 </div>
 
@@ -194,28 +162,14 @@ place_fields_sorted["unit"] = np.arange(place_fields_sorted.shape[0])
 p = (place_fields_sorted / place_fields_sorted.max(axis=1)).plot()
 ```
 
-```{code-cell} ipython3
-:tags: [hide-input]
-
-p.figure.savefig("../../_static/_check_figs/pc-14.png")
-```
-
-<div class="render-user">
-:::{admonition} Figure check
-:class: dropdown
-![](../../_static/_check_figs/pc-14.png)
-:::
-</div>
-
-
-
 <div class="render-all">
 
-We can decode any number of features using the function [`nap.decode_bayes`](https://pynapple.org/generated/pynapple.process.decoding.html#pynapple.process.decoding.decode_bayes), which will decode any number of features given by the input `tuning_curves`, computed by [`nap.compute_tuning_curves`](https://pynapple.org/generated/pynapple.process.tuning_curves.html#pynapple.process.tuning_curves.compute_tuning_curves).
+We can decode any number of features using the function [`nap.decode_bayes`](https://pynapple.org/generated/pynapple.process.decoding.html#pynapple.process.decoding.decode_bayes), which decodes any feature used in the input `tuning_curves` computed by [`nap.compute_tuning_curves`](https://pynapple.org/generated/pynapple.process.tuning_curves.html#pynapple.process.tuning_curves.compute_tuning_curves).
 
-#### 5.1 Use [`nap.decode_bayes`](https://pynapple.org/generated/pynapple.process.decoding.html#pynapple.process.decoding.decode_bayes) to decode position during `ex_run_ep`
+#### 1. Use [`nap.decode_bayes`](https://pynapple.org/generated/pynapple.process.decoding.html#pynapple.process.decoding.decode_bayes) to decode position during `ex_run_ep` using all units in `spikes`.
 
 - Use 40 ms time bins
+- Note: `ex_run_ep` was originally computed in the first notebook and redefined above.
 
 </div>
 
@@ -263,7 +217,7 @@ fig.savefig("../../_static/_check_figs/pc-15.png")
 
 <div class="render-all">
     
-While the decoder generally follows the animal's true position, there is still a lot of error in the decoder, especially later in the run. We can improve the decoder error by smoothing the spike counts. [`nap.decode_bayes`](https://pynapple.org/generated/pynapple.process.decoding.html#pynapple.process.decoding.decode_bayes) provides the option to do this for you by specifying `sliding_window_size`, which specifies the width, in number of bins, of a uniform (all ones) kernel to convolve with the spike counts. This is equivalent to applying a moving sum to adjacent bins, where the width of the kernel is the number of adjacent bins being added together. This is equivalent to counting spikes in a *sliding window* that shifts in shorter increments than the window's width, resulting in bins that overlap. This combines the accuracy of using a wider time bin with the temporal resolution of a shorter time bin.
+While the decoder generally follows the animal's true position, there is still a lot of error in the decoder, especially later in the run. We can improve the decoder error by smoothing the spike counts. [`nap.decode_bayes`](https://pynapple.org/generated/pynapple.process.decoding.html#pynapple.process.decoding.decode_bayes) provides the option to do this for you by specifying `sliding_window_size`, which specifies the width, in number of bins, of a uniform (all ones) kernel to convolve with the spike counts. This is equivalent to applying a moving sum to adjacent bins, where the width of the kernel is the number of adjacent bins being added together. This can also be referred to as using a *sliding window* to count spikes that shifts in shorter increments than the window's width, which combines the accuracy of using a wider time bin with the temporal resolution of a shorter time bin.
 
 For example, let's say we want a sliding window of $200 ms$ that shifts by $40 ms$. This is equivalent to summing together 5 adjacent $40 ms$ bins, or convolving spike counts in $40 ms$ bins with a length-5 array of ones ($[1, 1, 1, 1, 1]$). Let's visualize this convolution.
 
@@ -272,6 +226,7 @@ For example, let's say we want a sliding window of $200 ms$ that shifts by $40 m
 ```{code-cell} ipython3
 :tags: [render-all]
 
+unit = 177
 ex_counts = spikes[unit].restrict(ex_run_ep).count(0.04)
 workshop_utils.animate_1d_convolution(ex_counts, np.ones(5), tsd_label="original counts", kernel_label="moving sum", conv_label="convolved counts")
 ```
@@ -282,7 +237,7 @@ The count at each time point is computed by convolving the kernel (yellow), cent
 
 </div>
 
-#### 5.2 Decode the same run as above, now using sliding window size of 5 bins.
+#### 2. Decode the same run as above, now using sliding window size of 5 bins.
 
 <div class="render-user">
 ```{code-cell} ipython3
@@ -329,11 +284,11 @@ fig.savefig("../../_static/_check_figs/pc-16.png")
     
 This gives us a much closer approximation of the animal's true position.
 
-Units phase precessing together creates fast, spatial sequences around the animal's true position. We can reveal this by decoding at an even shorter time scale, which will appear as smooth errors in the decoder.
+Units phase precessing together creates fast, spatial sequences around the animal's true position (see notebook 2 for a deeper dive into phase precession). We can demonstrate this by decoding at an even shorter time scale, which will appear as smooth errors in the decoder.
 
 </div>
 
-#### 5.3 Decode again using a smaller bin size of $10 ms$ and sliding window size of 5 bins.
+#### 3. Decode again using a smaller bin size of $10 ms$ and sliding window size of 5 bins.
 
 <div class="render-user">
 ```{code-cell} ipython3
@@ -362,6 +317,8 @@ axs[0].set_ylabel("Position (cm)")
 axs[0].legend([p1[0],p2[0]],["decoded position","true position"])
 fig.colorbar(c, label = "predicted probability")
 
+sample_rate = 1250
+theta_band = nap.apply_bandpass_filter(lfp, (6.0, 12.0), fs=sample_rate)
 axs[1].plot(lfp.restrict(ex_run_ep))
 axs[1].plot(theta_band.restrict(ex_run_ep))
 axs[1].set_ylabel("LFP (a.u.)")
@@ -411,11 +368,3 @@ Instead of using place fields computed from the data, what if we used the predic
 ```{code-cell} ipython3
 # GLM decoding
 ```
-
-## References
-
-<div class="render-all">
-
-The data in this tutorial comes from [Grosmark, Andres D., and György Buzsáki. "Diversity in neural firing dynamics supports both rigid and learned hippocampal sequences." Science 351.6280 (2016): 1440-1443](https://www.science.org/doi/full/10.1126/science.aad1935).
-
-</div>

@@ -45,7 +45,7 @@ This series is split into 4 notebooks:
 3. 2D neural tuning and model fitting
 4. Neural decoding
 
-This notebook assumes you have already gone through the first notebook to explore the data. We'll reinitialize variable created in the first notebook that will be used here.
+This notebook assumes you have already gone through the first notebook to explore the data. We'll reinitialize variables created in the first notebook that will be used here.
 
 </div>
 

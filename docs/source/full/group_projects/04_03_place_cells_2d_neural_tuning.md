@@ -45,7 +45,8 @@ This series is split into 4 notebooks:
 3. (This notebook) 2D neural tuning and model fitting
 4. Neural decoding
 
-This notebook assumes you have already gone through the first notebook to explore the data. We'll reinitialize variable created in the first notebook that will be used here.
+This notebook assumes you have already gone through the first notebook to explore the data. We'll reinitialize variables created in the first notebook that will be used here.
+
 </div>
 
 ```{code-cell} ipython3
@@ -71,7 +72,7 @@ plt.style.use(nmo.styles.plot_style)
 # configure pynapple to ignore conversion warning
 nap.nap_config.suppress_conversion_warnings = True
 
-# code needed from first and second notebooks
+# code needed from first notebook
 path = workshop_utils.fetch_data("Achilles_10252013_EEG.nwb")
 data = nap.load_file(path)
 forward_ep = data["forward_ep"]
@@ -103,6 +104,8 @@ First we need the theta phase for our second target feature. We provide the code
 </div>
 
 ```{code-cell} ipython3
+:tags: [render-all]
+
 sample_rate = 1250
 theta_band = nap.apply_bandpass_filter(lfp, (6.0, 12.0), fs=sample_rate)
 theta_phase = nap.compute_hilbert_phase(theta_band)
