@@ -30,7 +30,7 @@ warnings.filterwarnings(
 :::{admonition} Download
 :class: important render-all
 
-This notebook can be downloaded as **{nb-download}`04_place_cells.ipynb`**. See the button at the top right to download as markdown or pdf.
+This notebook can be downloaded as **{nb-download}`04_place_cells_2d_neural_tuning.ipynb`**. See the button at the top right to download as markdown or pdf.
 :::
 
 # 2D neural tuning and model fitting

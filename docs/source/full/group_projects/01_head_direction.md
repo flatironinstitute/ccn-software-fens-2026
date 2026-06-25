@@ -57,6 +57,6 @@ The pynapple documentation can be found [here](https://pynapple.org) and the nem
 ```{toctree}
 :glob:
 :titlesonly:
-part*
+01_head_direction/*
 ```
 </div>
