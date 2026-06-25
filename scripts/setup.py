@@ -55,18 +55,18 @@ def main():
     )
     subprocess.run(["python", repo_dir / "scripts" / "strip_text.py"], cwd=repo_dir)
 
-    for f in docs_nb_dir_gp.glob("*md"):
-        if "index.md" in f.name or "03_visual_coding" in f.name:
-            continue
-        # have jupytext write output to a tmp file that we then delete. if --output is
-        # not specified, will write to original file which, for some reason, removes the
-        # `no-search: true` in the front matter. if the tmp file is not in the same
-        # directory as the actual file, relative paths don't work.
-        subprocess.run(
-            ["jupytext", "--execute", f.absolute(), "--output", f.with_name("tmp.md")]
-        )
-    # move outside the loop to avoid potential race conditions with next subprocess
-    os.remove(f.with_name("tmp.md"))
+    for d in docs_nb_dir_gp.iterdir():
+        if d.is_dir():
+            for f in d.glob("*md"):
+                # have jupytext write output to a tmp file that we then delete. if --output is
+                # not specified, will write to original file which, for some reason, removes the
+                # `no-search: true` in the front matter. if the tmp file is not in the same
+                # directory as the actual file, relative paths don't work.
+                subprocess.run(
+                    ["jupytext", "--execute", f.absolute(), "--output", f.with_name("tmp.md")]
+                )
+            # move outside the loop to avoid potential race conditions with next subprocess
+            os.remove(f.with_name("tmp.md"))
 
     # find the file that each anchor lives in, so that we can update them for notebooks
     # below
@@ -105,7 +105,9 @@ def main():
             )
 
         # remove download admonition
-        nb_contents = re.sub(r":::{admonition} Download.*?:::", "", nb_contents, flags=re.DOTALL)
+        nb_contents = re.sub(
+            r":::{admonition} Download.*?:::", "", nb_contents, flags=re.DOTALL
+        )
 
         output_f.write_text(nb_contents)
 

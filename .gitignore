@@ -180,3 +180,9 @@ _build/
 uv.lock
 
 *.inv
+/docs/source/presenters/group_projects/02_place_cells
+/docs/source/users/group_projects/02_place_cells
+/docs/source/presenters/group_projects/01_head_direction
+/docs/source/users/group_projects/01_head_direction
+/notebooks/group_projects/01_head_direction
+/notebooks/group_projects/02_place_cells

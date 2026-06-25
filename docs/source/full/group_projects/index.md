@@ -8,9 +8,8 @@ orphan:
 For instructors / TAs **only**.
 
 ```{toctree}
+:glob:
 :titlesonly:
 :maxdepth: 2
-01_head_direction/landing
-04_place_cells
-05_visual_coding
+*
 ```
