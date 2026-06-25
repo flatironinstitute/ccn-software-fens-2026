@@ -75,7 +75,6 @@ nap.nap_config.suppress_conversion_warnings = True
 # code needed from first notebook
 path = workshop_utils.fetch_data("Achilles_10252013_EEG.nwb")
 data = nap.load_file(path)
-
 forward_ep = data["forward_ep"]
 position = data["position"].restrict(forward_ep)
 lfp = data["eeg"][:,0]
@@ -84,7 +83,6 @@ speed = np.abs(position.derivative())
 ex_ep = nap.IntervalSet(start=forward_ep[9].start, end=forward_ep[9].end+2)
 ex_lfp = lfp.restrict(ex_ep)
 ex_position = position.restrict(ex_ep)
-ex_speed = speed.restrict(ex_ep)
 ```
 
 ## Part 3: Signal processing

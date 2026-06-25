@@ -37,15 +37,15 @@ This notebook can be downloaded as **{nb-download}`04_place_cells.ipynb`**. See 
 
 <div class="render-all">
     
-In this tutorial we will review more advanced applications of pynapple; tuning curves, signal processing, and decoding; as well as fitting GLMs to the data using NeMoS. We'll apply these methods to demonstrate and visualize some well-known physiological properties of hippocampal activity, specifically phase presession of place cells and sequential coordination of place cell activity during theta oscillations.
+In this series of notebooks, we will review more advanced applications of pynapple; tuning curves, signal processing, and decoding; as well as fitting GLMs to the data using NeMoS. We'll apply these methods to demonstrate and visualize some well-known physiological properties of hippocampal activity, specifically phase presession of place cells and sequential coordination of place cell activity during theta oscillations.
 
-This notebook is separated into 5 Parts:
-1. Data wrangling
-2. 1D neural tuning and model fitting
-3. Signal processing
-4. 2D neural tuning and model fitting
-5. Neural decoding
+This series is split into 4 notebooks:
+1. Data wrangling, 1D neural tuning, and model fitting
+2. Signal processing
+3. (This notebook) 2D neural tuning and model fitting
+4. Neural decoding
 
+This notebook assumes you have already gone through the first notebook to explore the data. We'll reinitialize variable created in the first notebook that will be used here.
 </div>
 
 ```{code-cell} ipython3
@@ -70,125 +70,49 @@ plt.style.use(nmo.styles.plot_style)
 
 # configure pynapple to ignore conversion warning
 nap.nap_config.suppress_conversion_warnings = True
-```
 
-```{code-cell} ipython3
-:tags: [render-all]
-
-# fetch file path
+# code needed from first and second notebooks
 path = workshop_utils.fetch_data("Achilles_10252013_EEG.nwb")
-# load data with pynapple
 data = nap.load_file(path)
-print(data)
-```
-
-```{code-cell} ipython3
-:tags: [render-all]
-
-position = data["position"]
-lfp = data["eeg"][:,0]
-spikes = data["units"]
 forward_ep = data["forward_ep"]
-```
-
-```{code-cell} ipython3
-position = position.restrict(forward_ep)
-np.any(np.isnan(position))
-```
-
-```{code-cell} ipython3
+position = data["position"].restrict(forward_ep)
+lfp = data["eeg"][:,0].restrict(forward_ep)
+spikes = data["units"]
 speed = np.abs(position.derivative())
-```
-
-```{code-cell} ipython3
-ex_ep = nap.IntervalSet(start=forward_ep[9].start, end=forward_ep[9].end+2)
-ex_lfp = lfp.restrict(ex_ep)
-ex_position = position.restrict(ex_ep)
-ex_speed = speed.restrict(ex_ep)
-```
-
-```{code-cell} ipython3
 good_spikes = spikes[(spikes.restrict(forward_ep).rate >= 1) & (spikes.restrict(forward_ep).rate <= 10)]
-```
-
-```{code-cell} ipython3
 place_fields = nap.compute_tuning_curves(good_spikes, position, 50, feature_names=["position"])
-```
-
-```{code-cell} ipython3
-:tags: [render-all]
-
-neurons = [82, 92, 220]
-p = place_fields.sel(unit=neurons).plot(x="position", col="unit")
-p.set_ylabels("firing rate (Hz)")
-```
-
-```{code-cell} ipython3
 speed_fields = nap.compute_tuning_curves(spikes, speed, bins=30, epochs=speed.time_support, feature_names=["speed"])
-```
-
-```{code-cell} ipython3
 bin_size = 0.01
+neurons = [82, 92, 220]
 counts = good_spikes[neurons].count(bin_size, ep=forward_ep)
-```
-
-```{code-cell} ipython3
 up_position = position.interpolate(counts)
 up_speed = speed.interpolate(counts)
-```
-
-```{code-cell} ipython3
 position_basis = nmo.basis.BSplineEval(n_basis_funcs=12, label="position")
 speed_basis = nmo.basis.BSplineEval(n_basis_funcs=6, label="speed")
-fig = workshop_utils.plot_pos_speed_bases(position_basis, speed_basis)
 ```
-
-```{code-cell} ipython3
-sample_rate = 1250
-```
-
-```{code-cell} ipython3
-lfp = lfp.restrict(forward_ep)
-position = position.restrict(forward_ep)
-```
-
-```{code-cell} ipython3
-theta_band = nap.apply_bandpass_filter(lfp, (6.0, 12.0), fs=sample_rate)
-```
-
-```{code-cell} ipython3
-phase = np.angle(sp.signal.hilbert(theta_band)) # compute phase with hilbert transform
-phase %= 2 * np.pi # wrap to [0,2pi]
-theta_phase = nap.Tsd(t=theta_band.t, d=phase, time_support=theta_band.time_support)
-theta_phase
-```
-
-<div class="render-user">
-:::{admonition} Figure check
-:class: dropdown
-![](../../_static/_check_figs/pc-11.png)
-:::
-</div>
-
-
-<div class="render-all">
-    
-Similar to what we saw in a single run, there is a negative relationship between theta phase and field position, characteristic of phase precession.
-
-</div>
 
 ## Part 4: 2D neural tuning and model fitting
 ### Computing 2D tuning curves: position vs. phase
 
 <div class="render-all">
 
-The scatter plot above can be similarly be represented as a 2D tuning curve over position and phase. We can compute this using the same function, [`nap.compute_tuning_curves`](https://pynapple.org/generated/pynapple.process.tuning_curves.html#pynapple.process.tuning_curves.compute_tuning_curves), but now passing second input, `features`, as a 2-column `TsdFrame` containing the two target features.
+We can visualize phase precession as a 2D tuning curve over position and phase. We can compute this using the same function as the first notebook, [`nap.compute_tuning_curves`](https://pynapple.org/generated/pynapple.process.tuning_curves.html#pynapple.process.tuning_curves.compute_tuning_curves), but now passing `features` as a 2-column `TsdFrame` containing the two target features.
 
-To do this, we'll need to combine `position` and `theta_phase` into a `TsdFrame`. For this to work, both variables must have the same length. Similar to what we did in Part 2, we can achieve this by upsampling `position` to the length of `theta_phase` using the pynapple object method [`interpolate`](https://pynapple.org/generated/pynapple.Tsd.interpolate.html). Once they're the same length, they can be combined into a single `TsdFrame` and used to compute 2D tuning curves.
+First we need the theta phase for our second target feature. We provide the code below for extracting theta phase from the LFP. We do this by: 1) filtering the raw signal to the theta frequency band (6-12Hz), and 2) extracting the phase from the hilbert transform. Both of these steps can be done using pynapple functions (see notebook 2 for a deeper dive into signal processing).
 
 </div>
 
-#### 4.1 Interpolate `position` to the time points of `theta_phase`.
+```{code-cell} ipython3
+sample_rate = 1250
+theta_band = nap.apply_bandpass_filter(lfp, (6.0, 12.0), fs=sample_rate)
+theta_phase = nap.compute_hilbert_phase(theta_band)
+```
+
+</div>
+
+Now we need to combine `position` and `theta_phase` into a `TsdFrame`. For this to work, both variables must have the same length. We can achieve this by upsampling `position` to the length of `theta_phase` using the pynapple object method [`interpolate`](https://pynapple.org/generated/pynapple.Tsd.interpolate.html).
+
+#### 1. Interpolate `position` to the time points of `theta_phase`.
 
 <div class="render-user"> 
 ```{code-cell} ipython3
@@ -200,11 +124,17 @@ upsampled_pos =
 upsampled_pos = position.interpolate(theta_phase)
 ```
 
-#### 4.2 Stack `upsampled_pos` and `theta_phase` together into a single [`TsdFrame`](https://pynapple.org/generated/pynapple.TsdFrame.html)
+<div class="render-all">
+
+Now we can combine `upsampled_pos` and `theta_phase` into a single `TsdFrame`. However, since comparing and merging time axes is nontrivial problem, pynapple does not allow us to do this directly. Instead, we need to extract the values from `upsampled_pos` and `theta_phase` and stack them together using `numpy`. Then we can define a new `TsdFrame` using the 2D feature array which we can use to compute 2D tuning curves.
+  
+</div>
+
+#### 2. Stack `upsampled_pos` and `theta_phase` together into a single [`TsdFrame`](https://pynapple.org/generated/pynapple.TsdFrame.html)
 
 <div class="render-all">
 
-- For stacking arrays, you can use a numpy function like `np.stack`.
+- For stacking arrays, you can use a numpy function like [`np.stack`](https://numpy.org/doc/stable/reference/generated/numpy.stack.html).
     - Tip: you may need to transpose to make sure time is in the first dimension of the stacked array
 - Make sure to name your `TsdFrame` columns `"position"` and `"phase"`
   
@@ -228,7 +158,7 @@ features = nap.TsdFrame(
 features
 ```
 
-#### 4.3 Apply [`nap.compute_tuning_curves`](https://pynapple.org/generated/pynapple.process.tuning_curves.html#pynapple.process.tuning_curves.compute_tuning_curves) with `features` on our subselected group of units, `good_spikes`
+#### 3. Use [`nap.compute_tuning_curves`](https://pynapple.org/generated/pynapple.process.tuning_curves.html#pynapple.process.tuning_curves.compute_tuning_curves) to compute 2D tuning curves for our subselected group of units, `good_spikes`, over position and phase stored in `features`.
 
 <div class="render-all">
 
@@ -279,17 +209,19 @@ You should be able to notice a negative relationship between position and phase,
 
 </div>
 
++++
+
 ### Estimating 2D tuning curves using 2D basis functions
 
 <div class="render-all">
     
-How can we model 2D tuning curves in a GLM? Similar to Part 2, we can define a 2D basis by using [NeMoS basis composition](https://nemos.readthedocs.io/en/latest/background/basis/plot_02_ND_basis_function.html), but instead *multiplying* two basis objects. In fact, we can use both addition and multiplication together to create arbitrarily complex, multidimensional basis objects.
+How can we model 2D tuning curves in a GLM? Similar the first notebook, we can define a 2D basis by using [NeMoS basis composition](https://nemos.readthedocs.io/en/latest/background/basis/plot_02_ND_basis_function.html), but instead *multiplying* two basis objects. In fact, we can use both addition and multiplication together to create arbitrarily complex, multidimensional basis objects.
 
 First, we'll create a basis object for theta phase, specifically using [`CyclicBSplineEval`](https://nemos.readthedocs.io/en/latest/generated/basis/nemos.basis.CyclicBSplineEval.html#nemos.basis.BSplineEval). We use this instead of `BSplineBasis` because the phase angle is a circular variable.
 
 </div>
 
-#### 4.4 Instantiate a [`CyclicBSplineEval`](https://nemos.readthedocs.io/en/latest/generated/basis/nemos.basis.CyclicBSplineEval.html#nemos.basis.BSplineEval) basis object for phase, using 10 basis functions.
+#### 4. Instantiate a [`CyclicBSplineEval`](https://nemos.readthedocs.io/en/latest/generated/basis/nemos.basis.CyclicBSplineEval.html#nemos.basis.BSplineEval) basis object for phase, using 10 basis functions.
 
 <div class="render-all">
 
@@ -308,7 +240,7 @@ phase_basis =
 phase_basis = nmo.basis.CyclicBSplineEval(n_basis_funcs=10, label="phase")
 ```
 
-#### 4.5 Create the full basis by multiplying `position_basis` and `phase_basis` and adding `speed_basis`.
+#### 5. Create the full basis by multiplying `position_basis` and `phase_basis` and adding `speed_basis`.
 
 <div class="render-user">
 ```{code-cell} ipython3
@@ -327,13 +259,7 @@ Before we can call `compute_features`, we need to make sure `theta_phase` has th
 
 </div>
 
-#### 4.6 Downsample `theta_phase` using `bin_average` and a bin size of 0.01 s.
-
-<div class="render-all">
-
-- If necessary, redefine `up_position` and `up_speed` the same as **2.5**.
-
-</div>
+#### 6. Downsample `theta_phase` using `bin_average` and a bin size of 0.01 s.
 
 <div class="render-user">
 ```{code-cell} ipython3
@@ -345,7 +271,12 @@ bin_theta =
 bin_theta = theta_phase.bin_average(0.01)
 ```
 
-#### 4.7 Create a design matrix by calling `compute_features` on `full_basis` using `up_position`, `bin_theta`, and `up_speed`
+#### 7. Create a design matrix by calling `compute_features` on `full_basis` using `up_position`, `bin_theta`, and `up_speed`
+<div class="render-all">
+
+- Note: `up_position` and `up_speed` were computed in the first notebook and have been redefined above.
+
+</div>
 
 <div class="render-user">
 ```{code-cell} ipython3
@@ -357,15 +288,21 @@ X =
 X = full_basis.compute_features(up_position, bin_theta, up_speed)
 ```
 
-#### 4.8 Fit a GLM by doing the following:
+<div class="render-all">
+
+Now we have everything we need to fit a GLM and predict the 2D tuning curves from our model.
+  
+</div>
+
+#### 8. Fit a GLM by doing the following:
 
 <div class="render-all">
 
 - Initialize `PopulationGLM`
 - Use the "LBFGS" solver and pass `{"tol": 1e-12}` to `solver_kwargs`.
 - Fit the data, passing the design matrix `X` and spike counts `counts` to the glm object.
-    - `counts` should have been computed before in **2.4**.
-
+    - Note: `counts` was computed in the first notebook and has been redefined above.
+  
 </div>
 
 
@@ -384,12 +321,13 @@ glm = nmo.glm.PopulationGLM(
 glm.fit(X, counts)
 ```
 
-#### 4.9 Use [`predict`](https://nemos.readthedocs.io/en/latest/generated/glm/nemos.glm.GLM.predict.html#nemos.glm.GLM.predict) to calculated the predicted firing rate of our model. Use the predicted rate to compute predicted tuning curves using [`nap.compute_tuning_curves`](https://pynapple.org/generated/pynapple.process.tuning_curves.html#pynapple.process.tuning_curves.compute_tuning_curves).
+#### 9. Use [`predict`](https://nemos.readthedocs.io/en/latest/generated/glm/nemos.glm.GLM.predict.html#nemos.glm.GLM.predict) to calculated the predicted firing rate of our model. Use the predicted rate to compute predicted tuning curves using [`nap.compute_tuning_curves`](https://pynapple.org/generated/pynapple.process.tuning_curves.html#pynapple.process.tuning_curves.compute_tuning_curves).
 
 <div class="render-all">
 
 - Remember to convert the predicted firing rate to spikes per second!
-- Compute 1D tuning curves for position and speeds in the same way as **2.10**.
+- Compute 1D tuning curves for position, using 50 and naming the feature `"position"`.
+- Compute 1D tuning curves for speed, using 30 bins and naming the feature `"speed"`.
 - Compute 2D tuning curves for position x phase using `predicted_rate` and the TsdFrame `features`, using 50 bins for position and 30 bins for phase.
 
 </div>
