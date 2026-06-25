@@ -45,7 +45,7 @@ This series is split into 4 notebooks:
 3. 2D neural tuning and model fitting
 4. Neural decoding
 
-You should all start by completing the first notebook, which is split into two parts: 1) Data wrangling and 2) 1D neural tuning curves and model fitting. Afterwards, you can choose any notebook that looks most interesting to you!
+You should start by completing the first notebook, which is split into two parts: 1) Data wrangling and 2) 1D neural tuning curves and model fitting. Afterwards, you can choose any notebook that looks most interesting to you!
 
 </div>
 

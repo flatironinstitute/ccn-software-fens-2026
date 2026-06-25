@@ -37,14 +37,15 @@ This notebook can be downloaded as **{nb-download}`04_place_cells.ipynb`**. See 
 
 <div class="render-all">
     
-In this tutorial we will review more advanced applications of pynapple; tuning curves, signal processing, and decoding; as well as fitting GLMs to the data using NeMoS. We'll apply these methods to demonstrate and visualize some well-known physiological properties of hippocampal activity, specifically phase presession of place cells and sequential coordination of place cell activity during theta oscillations.
+In this series of notebooks, we will review more advanced applications of pynapple; tuning curves, signal processing, and decoding; as well as fitting GLMs to the data using NeMoS. We'll apply these methods to demonstrate and visualize some well-known physiological properties of hippocampal activity, specifically phase presession of place cells and sequential coordination of place cell activity during theta oscillations.
 
-This notebook is separated into 5 Parts:
-1. Data wrangling
-2. 1D neural tuning and model fitting
-3. Signal processing
-4. 2D neural tuning and model fitting
-5. Neural decoding
+This series is split into 4 notebooks:
+1. Data wrangling, 1D neural tuning, and model fitting
+2. (This notebook) Signal processing
+3. 2D neural tuning and model fitting
+4. Neural decoding
+
+This notebook assumes you have already gone through the first notebook to explore the data. We'll reinitialize variable created in the first notebook that will be used here.
 
 </div>
 
@@ -70,70 +71,39 @@ plt.style.use(nmo.styles.plot_style)
 
 # configure pynapple to ignore conversion warning
 nap.nap_config.suppress_conversion_warnings = True
-```
 
-```{code-cell} ipython3
-:tags: [render-all]
-
-# fetch file path
+# code needed from first notebook
 path = workshop_utils.fetch_data("Achilles_10252013_EEG.nwb")
-# load data with pynapple
 data = nap.load_file(path)
-print(data)
-```
 
-```{code-cell} ipython3
-:tags: [render-all]
-
-position = data["position"]
+forward_ep = data["forward_ep"]
+position = data["position"].restrict(forward_ep)
 lfp = data["eeg"][:,0]
 spikes = data["units"]
-forward_ep = data["forward_ep"]
-```
-
-```{code-cell} ipython3
-position = position.restrict(forward_ep)
-np.any(np.isnan(position))
-```
-
-```{code-cell} ipython3
 speed = np.abs(position.derivative())
-```
-
-```{code-cell} ipython3
 ex_ep = nap.IntervalSet(start=forward_ep[9].start, end=forward_ep[9].end+2)
 ex_lfp = lfp.restrict(ex_ep)
 ex_position = position.restrict(ex_ep)
 ex_speed = speed.restrict(ex_ep)
 ```
 
-<div class="render-user">
-:::{admonition} Figure check
-:class: dropdown
-![](../../_static/_check_figs/pc-05.png)
-:::
-</div>
-
-<div class="render-all">
-
-We can see that this model does a good job capturing both the position and the speed. 
-
-</div>
-
 ## Part 3: Signal processing
 ### Getting the Wavelet Decomposition
 
 <div class="render-all">
 
-Next we'll use pynapple's signal processing module to analyze LFP and visualize phase precessing within hippocampal place cells. We'll start by performing a wavelet decomposition on the LFP trace during example run 9 that saved in **1.3** as the Tsd `ex_lfp`. We can do this in pynapple using the function [`nap.compute_wavelet_transform`](https://pynapple.org/generated/pynapple.process.wavelets.html#pynapple.process.wavelets.compute_wavelet_transform).
+In this notebook, we'll use pynapple's signal processing module to analyze LFP and visualize phase precession within hippocampal place cells. We'll start by performing a wavelet decomposition on the LFP trace during the example run saved in the Tsd `ex_lfp` defined above. We can do this in pynapple using the function [`nap.compute_wavelet_transform`](https://pynapple.org/generated/pynapple.process.wavelets.html#pynapple.process.wavelets.compute_wavelet_transform). This function requires the signal input as well as a set of frequencies to use for decomposition.
 
+:::{admonition} Background: Continuout Wavelet Transform
+:class: dropdown
 A [continuous wavelet transform](https://en.wikipedia.org/wiki/Continuous_wavelet_transform) decomposes a signal into a set of [wavelets](https://en.wikipedia.org/wiki/Wavelet), in this case [Morlet wavelets](https://en.wikipedia.org/wiki/Morlet_wavelet), that span both frequency and time. You can think of the wavelet transform as a cross-correlation between the signal and each wavelet, giving the similarity between the signal and various frequency components at each time point of the signal. Similar to a Fourier transform, this gives us an estimate of what frequencies are dominating a signal. Unlike the Fourier tranform, however, the wavelet transform gives us this estimate as a function of time.
+:::
 
-We must define the frequency set that we'd like to use for our decomposition. We can do this with the numpy function [`np.geomspace`](https://numpy.org/doc/stable/reference/generated/numpy.geomspace.html), which returns numbers evenly spaced on a log scale. We pass the lower frequency, the upper frequency, and number of samples as positional arguments.
+First we'll define our set of frequencies. We care more about lower frequencies, so we'll use the numpy function [`np.geomspace`](https://numpy.org/doc/stable/reference/generated/numpy.geomspace.html) for denser coverage at the lower end of our frequency interval.
 
 </div>
 
-#### 3.1 Define 100 log-spaced samples between 5 and 200 Hz using [`np.geomspace`](https://numpy.org/doc/stable/reference/generated/numpy.geomspace.html)
+#### 1 Define 100 log-spaced samples between 5 and 200 Hz using [`np.geomspace`](https://numpy.org/doc/stable/reference/generated/numpy.geomspace.html)
 
 <div class="render-user">
 ```{code-cell} ipython3
@@ -147,13 +117,9 @@ freqs =
 freqs = np.geomspace(5, 200, 100)
 ```
 
-<div class="render-all">
+Now we can compute the wavelet transform using [`nap.compute_wavelet_transform`](https://pynapple.org/generated/pynapple.process.wavelets.html#pynapple.process.wavelets.compute_wavelet_transform) by passing both `ex_lfp` and `freqs`. We'll also specify the optional argument `fs`, which is known to be 1250Hz from the study methods.
 
-We can now compute the wavelet transform on our LFP data during the example run using [`nap.compute_wavelet_transform`](https://pynapple.org/generated/pynapple.process.wavelets.html#pynapple.process.wavelets.compute_wavelet_transform) by passing both `ex_lfp` and `freqs`. We'll also pass the optional argument `fs`, which is known to be 1250Hz from the study methods.
-
-</div>
-
-#### 3.2 Compute the wavelet transform of `ex_lfp` using `freqs` defined above.
+#### 2. Compute the wavelet transform of `ex_lfp` using `freqs` defined above.
 
 <div class="render-all">
 
@@ -221,7 +187,7 @@ fig.savefig("../../_static/_check_figs/pc-06.png")
 
 <div class="render-all">
     
-You should see a strong presence of theta in the 6-12Hz frequency band while the animal runs down the track, which dampens during rest.
+You should see a high amplitude in the 6-12Hz frequency band, corresponding to theta, while the animal runs down the track, which dampens during rest.
 
 </div>
 
@@ -233,33 +199,25 @@ To capture phase precession, we will need to compute the phase of the theta osci
 
 </div>
 
-#### 3.3 Restrict `lfp` to `forward_ep`.
-
-<div class="render-all">
-
-- Confirm that `position` is already be restricted to this epoch from **1.1**. If not, also restrict `position` to `forward_ep`
-
-</div>
+#### 3. Restrict `lfp` to `forward_ep`.
 
 <div class="render-user">  
 ```{code-cell} ipython3
 lfp = 
-position = 
 ```
 </div>
 
 ```{code-cell} ipython3
 lfp = lfp.restrict(forward_ep)
-position = position.restrict(forward_ep)
 ```
 
 <div class="render-all">
 
-We can extract the theta oscillation by applying a bandpass filter on the raw LFP. To do this, we use the pynapple function [`nap.apply_bandpass_filter`](https://pynapple.org/generated/pynapple.process.filtering.html#pynapple.process.filtering.apply_bandpass_filter). Conveniently, this function will recognize and handle splits in the epoched data (i.e. applying the filtering separately to discontinuous epochs), so we don't have to worry about passing signals that have been split in time.
+We can extract the theta oscillation by applying a bandpass filter on the raw LFP. To do this, we use the pynapple function [`nap.apply_bandpass_filter`](https://pynapple.org/generated/pynapple.process.filtering.html#pynapple.process.filtering.apply_bandpass_filter). This function will handle splits in the data (defined by the time support) by filtering each discontinuous epoch separately.
 
 </div>
 
-#### 3.4 Using [`nap.apply_bandpass_filter`](https://pynapple.org/generated/pynapple.process.filtering.html#pynapple.process.filtering.apply_bandpass_filter), filter `lfp` for theta within a 6-12 Hz range.
+#### 4. Using [`nap.apply_bandpass_filter`](https://pynapple.org/generated/pynapple.process.filtering.html#pynapple.process.filtering.apply_bandpass_filter), filter `lfp` for theta within a 6-12 Hz range.
 
 <div class="render-all">
 
@@ -312,33 +270,21 @@ fig.savefig("../../_static/_check_figs/pc-07.png")
 
 <div class="render-all">
 
-Finally, we need to extract the phase of theta from the filtered signal. We can do this by taking the angle of the [Hilbert transform](https://en.wikipedia.org/wiki/Hilbert_transform).
+From the filtered signal, we can extract the theta phase. We can do using the pynapple function [`nap.compute_hilbert_phase`](https://pynapple.org/generated/pynapple.process.signal.html#pynapple.process.signal.compute_hilbert_phase), which will give us the angle of the [Hilbert transform](https://en.wikipedia.org/wiki/Hilbert_transform), a common method for computing the phase of a periodic signal. This function will return the phase angle wrapped to the $[0, 2\pi]$ range.
 
 </div>
 
-#### 3.5 Use [`sp.signal.hilbert`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.hilbert.html) to perform the Hilbert transform of `theta_band`, using [`np.angle`](https://numpy.org/doc/2.3/reference/generated/numpy.angle.html) to extract the angle. Convert the output angle to a [0, 2pi] range, and store the result in a `Tsd` object.
-
-<div class="render-all">
-
-- TIP: don't forget to pass the time support!
-- The code for wrapping the phase from [0, 2pi] is provided, by taking the [modulo](https://en.wikipedia.org/wiki/Modulo) of all angles with 2pi. (When all values are between -pi, and pi, this is equivalent to adding 2pi to all negative angles.)
-  
-</div>
+#### 5. Use [`nap.compute_hilbert_phase`](https://pynapple.org/generated/pynapple.process.signal.html#pynapple.process.signal.compute_hilbert_phase) to compute the phase of `theta_band`
 
 <div class="render-user"> 
 ```{code-cell} ipython3
 # compute the phase
-phase = 
-phase %= 2 * np.pi # wrap to [0,2pi]
-# store as a Tsd
 theta_phase = 
 ```
 </div>
 
 ```{code-cell} ipython3
-phase = np.angle(sp.signal.hilbert(theta_band)) # compute phase with hilbert transform
-phase %= 2 * np.pi # wrap to [0,2pi]
-theta_phase = nap.Tsd(t=theta_band.t, d=phase, time_support=theta_band.time_support)
+theta_phase = nap.compute_hilbert_phase(theta_band)
 theta_phase
 ```
 
@@ -383,9 +329,9 @@ fig.savefig("../../_static/_check_figs/pc-08.png")
 
 <div class="render-all">
     
-As an initial visualization of phase precession, we'll look at a single traversal of the linear track. First, let's look at how the timing of an example unit's spikes lines up with the LFP and theta. To plot the spike times on the same axis as the LFP, we'll use the pynapple object's method [`value_from`](https://pynapple.org/generated/pynapple.TsGroup.value_from.html) to align the spike times with the theta amplitude. For our spiking data, this will find the amplitude closest in time to each spike. Let's start by applying [`value_from`](https://pynapple.org/generated/pynapple.TsGroup.value_from.html) on unit 177, who's place field is cenetered on the linear track, using `theta_band` to align the amplityde of the filtered LFP.
+We can vizualize phase precession within a place cell by looking at how its spike times line up with theta while the animal runs through its place field. To demonstrate this, we'll use unit 177, whose place field is cenetered on the linear track. To plot spike times and theta amplitude together, we can use the pynapple method [`value_from`](https://pynapple.org/generated/pynapple.TsGroup.value_from.html), which will find the theta amplitude closest in time to each spike. 
 
-#### 3.6 Use the pynapple object method [`value_from`](https://pynapple.org/generated/pynapple.TsGroup.value_from.html) to find the value of `theta_band` corresponding to each spike time from unit 177.
+#### 6. Use the pynapple object method [`value_from`](https://pynapple.org/generated/pynapple.TsGroup.value_from.html) to find the value of `theta_band` corresponding to each spike time from unit 177.
 
 </div>
 
@@ -438,13 +384,13 @@ fig.savefig("../../_static/_check_figs/pc-09.png")
 
 <div class="render-all">
     
-As the animal runs through unit 177's place field (thick green), the unit spikes (orange dots) at specific points along the theta cycle dependent on position: starting at the rising edge, moving towards the trough, and ending at the falling edge.
+As the animal runs through unit 177's place field (thick green), the cell spikes (orange dots) at specific points along the theta cycle dependent on position: starting at the rising edge, moving towards the trough, and ending at the falling edge.
 
-We can exemplify this pattern by plotting the spike times aligned to the phase of theta. We'll want the corresponding phase of theta at which the unit fires as the animal is running down the track, which we can again compute using the method [`value_from`](https://pynapple.org/generated/pynapple.TsGroup.value_from.html). 
+We see this pattern more clearly by plotting the spike times aligned to the phase of theta. 
 
 </div>
 
-#### 3.7 Compute the value of `theta_phase` corresponding to each spike time from unit 177.
+#### 7. Compute the value of `theta_phase` corresponding to each spike time from unit 177.
 
 <div class="render-user">  
 ```{code-cell} ipython3
@@ -458,7 +404,7 @@ spike_phase = spikes[unit].value_from(theta_phase)
 
 <div class="render-all">
 
-To visualize the results, we'll recreate the plot above, but instead with the theta phase.
+To visualize the results, we'll recreate the plot above and include the theta phase.
 
 </div>
 
@@ -497,13 +443,13 @@ fig.savefig("../../_static/_check_figs/pc-10.png")
 
 <div class="render-all">
     
-We now see a negative trend in the spike phase as the animal moves through unit 177's place field. This phemomena is known as phase precession: the phase at which a unit spikes *precesses* (gets earlier) as the animal runs through that unit's place field. Explicitly, that unit will spike at *late* phases of theta (higher radians) in *earlier* positions in the field, and fire at *early* phases of theta (lower radians) in *late* positions in the field.
+We now see a negative slope in the spike phase as the animal moves through the unit's place field. This phemomena is known as phase precession: the phase at which a unit spikes *precesses* (gets earlier) as the animal runs through that unit's place field. Explicitly, that unit will spike at *late* phases of theta (higher radians) in *earlier* positions in the field, and fire at *early* phases of theta (lower radians) in *late* positions in the field.
 
 We can observe this phenomena on average across the session by relating the spike phase to the spike position. 
 
 </div>
 
-#### 3.8 Compute the position corresponding to each spike for example unit 177.
+#### 8. Compute the position corresponding to each spike for example unit 177.
 
 <div class="render-user">
 ```{code-cell} ipython3
