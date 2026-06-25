@@ -31,7 +31,7 @@ You should start by completing the first notebook, which is split into two parts
 :glob:
 :titlesonly:
 :maxdepth: 1
-04_place_cells/*
+02_place_cells/*
 ```
 
 </div>

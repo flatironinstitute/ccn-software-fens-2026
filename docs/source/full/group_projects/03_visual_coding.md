@@ -31,7 +31,7 @@ warnings.filterwarnings(
 :::{admonition} Download
 :class: important render-all
 
-This notebook can be downloaded as **{nb-download}`05_visual_coding.ipynb`**. See the button at the top right to download as markdown or pdf.
+This notebook can be downloaded as **{nb-download}`03_visual_coding.ipynb`**. See the button at the top right to download as markdown or pdf.
 :::
 
 # Exploring the Allen Institute's Visual Coding dataset
