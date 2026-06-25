@@ -41,7 +41,9 @@ for md in (repo_dir / "docs/source/full").glob("**/*md"):
     os.makedirs(presenter_md.parent, exist_ok=True)
 
     ipynb = f"{md.stem}.ipynb"
-    local_path = f"../../full/{md.parent.name}/{md.name}"
+    rel = md.relative_to(repo_dir / "docs/source/full")
+    depth = len(rel.parts) - 1
+    local_path = "../" * (depth + 1) + "full/" + str(rel).replace("\\", "/")
 
     contents = md.read_text()
 

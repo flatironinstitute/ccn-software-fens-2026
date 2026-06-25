@@ -345,10 +345,12 @@ full/live_coding/*
 ```
 
 ```{toctree}
-:glob:
 :caption: Group projects
 :titlesonly:
-users/group_projects/*
+:maxdepth: 2
+users/group_projects/01_head_direction/landing-users
+users/group_projects/04_place_cells-users
+users/group_projects/05_visual_coding-users
 ```
 
 ```{toctree}
