@@ -3,7 +3,7 @@ properties([
   buildDiscarder(logRotator(numToKeepStr: '8', daysToKeepStr: '20'))
 ])
 
-try {
+catchError {
   timeout(time: 2, unit: 'HOURS') {
     buildPod(gpus: 1, context: 'jenkins') {
       stage('docs') {
@@ -17,8 +17,6 @@ try {
         ]) {
           sh "curl -LsSf https://astral.sh/uv/install.sh | sh"
           sh '''#!/bin/bash -ex
-              # make sure we have the git tags, since we need them to correctly version output
-              git fetch --tags
               source $HOME/.local/bin/env
               uv sync
               NEMOS_DATA_DIR=./data/ uv run python src/workshop_utils/fetch.py
@@ -86,6 +84,4 @@ try {
     }
   }
 }
-finally {
-  emailFailure()
-}
+emailFailure()
