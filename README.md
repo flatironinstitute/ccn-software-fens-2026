@@ -40,6 +40,30 @@ Users version preserves:
 - Only colon-fence blocks (e.g., admonitions) that have the class `render-user` or `render-all`
 - Only markdown wrapped in a `<div class='render-user>` or `<div class='render-all'>`.
 
+
+## figure check
+To add figure checks to group project notebooks, you need to add a hidden cell that saves the figure to the `docs/source/_static/_check_figs` folder that only renders in the full version of the notebook, e.g.:
+````
+```{code-cell} ipython3
+:tags: [hide-input]
+
+fig.savefig("../../../_static/_check_figs/pc-01.png")
+```
+````
+Afterwards, you need to add a markdown dropdown that loads in the same image, e.g.:
+```
+<div class="render-user">
+:::{admonition} Figure check
+:class: dropdown
+![](../../../_static/_check_figs/pc-01.png)
+:::
+</div>
+```
+**You will need to make sure that the figure name is unique and that the relative pathing is correct.** `strip_text.py` will handle updating the relative links when creating the user version.
+
+`setup.py` has a section that converts, runs, and deletes the full version of the notebooks to save the figure checks locally for each participant. Currently, this is only running group project notebooks that appear in subfolders of `group_projects`, and it will need to be updated if there are group project notebooks directly in `group_projects` that require generating figure checks.
+
+
 ## Participants
 
 We build all of the notebooks as a sphinx site, which we can browse. `index.md` is the main way in which participants will view the information present in this repo. They are instructed to clone this repo and run `scripts/setup.py`, which will download all the data, run `scripts/strip_text.py`, and convert the resulting user notebooks to `ipynb` files, placing them in the `notebooks/` directory. This is what users will see on their screen as they work on their notebook.
@@ -53,3 +77,4 @@ For internal cross-references (i.e., those that refer to other notebooks in this
 See [nemos Feb 2024 workshop](https://github.com/flatironinstitute/nemos-workshop-feb-2024) for details on how to set up the Binder
 
 For TAs / instructors: [group project link](https://flatironinstitute.github.io/neurorse-workshops/workshops/fens-2026/branch/main/full/group_projects/)
+
