@@ -951,7 +951,7 @@ workshop_utils.plot_design_matrix(X, choices);
 ### Converting choices
 
 <div class="render-presenter">
-So the reason why we need to convert our choices is that we are going to fit a Bernoulli GLM-HMM to model binary choices. 
+So the reason why we need to convert our choices is that we are going to fit a Bernoulli GLM-HMM to model binary choices. In the original paper, the choices are  flipped. We decided to keep the left choice as it was, left = 1, and change right to = 0. in the original paper they changed it to be right=1 left =0.
 
 - Our Bernoulli GLM expects binary responses: 0 or 1
 - In the dataset, choices are encoded as:
@@ -1528,6 +1528,7 @@ From this we can compute the fractional occupancy, while correctly filtering out
 
 # calculate occupancy
 print(f"Not nan? \n {~np.isnan(decoded_states)}")
+
 ```
 
 ```{code-cell} ipython3
@@ -1535,6 +1536,7 @@ print(f"Not nan? \n {~np.isnan(decoded_states)}")
 
 valid = np.all(~np.isnan(decoded_states), axis=1)
 print(f"valid? \n {valid}")
+
 ```
 
 ```{code-cell} ipython3
