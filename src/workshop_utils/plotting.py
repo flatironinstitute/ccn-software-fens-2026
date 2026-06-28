@@ -1051,7 +1051,7 @@ _COINFLIP_ICON = (
 )
 
 
-def plot_design_matrix(X, choices, valid_choices_idx, n_trials=20):
+def plot_design_matrix(X, choices, n_trials=20):
     """Plot the GLM-HMM design matrix and the associated choices side by side.
 
     The left heatmap shows the first ``n_trials`` rows of the design matrix
@@ -1065,9 +1065,6 @@ def plot_design_matrix(X, choices, valid_choices_idx, n_trials=20):
         Design matrix of shape ``(n_trials_total, n_features)``.
     choices :
         Choice values (e.g. a ``pynapple.Tsd`` or array) before validity
-        filtering; ``choices[valid_choices_idx]`` selects the valid trials.
-    valid_choices_idx :
-        Integer indices of the valid (non-violation) trials into ``choices``.
     n_trials :
         Number of trials (rows) to display. Default 20.
 
@@ -1130,7 +1127,7 @@ def plot_design_matrix(X, choices, valid_choices_idx, n_trials=20):
 
     # ---- heatmap 2: choices (separate bi-colour scale) ----
     sns.heatmap(
-        choices[valid_choices_idx].reshape(-1, 1)[:n_trials],
+        choices.reshape(-1, 1)[:n_trials],
         ax=axes[1],
         square=True,
         cmap=cmap_choice,

@@ -4,11 +4,11 @@ jupytext:
     extension: .md
     format_name: myst
     format_version: 0.13
-    jupytext_version: 1.19.1
+    jupytext_version: 1.19.3
 kernelspec:
-  display_name: glm_hmm_notebook (3.12.10)
-  language: python
   name: python3
+  display_name: Python 3 (ipykernel)
+  language: python
 ---
 
 ```{code-cell} ipython3
@@ -38,30 +38,7 @@ And turn on `View > Render side-by-side` (shortcut `Shift+R`).
 # Infer behavioral strategies during decision making with GLM-HMMs
 <div class="render-all">
 
-In this notebook, we will learn how to model behavioral choices by fitting a GLM-HMM, replicating the main findings of Ashwood et al. (2022) <span id="cite1a"></span><a href="#ref1a">[1a]</a>. 
-
-![Ashwood paper figures to replicate](../../docs/source/_static/ashwood_paper_figs.svg)
-
-We will do this in four steps: 
-
-1. Download and preprocess the data
-2. Build a design matrix with three predictors
-3. Fit the model 
-4. Interpret the results
-
-</div>
-
-
-## 01. Download and preprocessing of data
-
-:::{admonition} What do we want to do in this subsection?
-:class: attention render-all
-
-1. Download the dataset
-2. See what it contains
-3. Subset the sessions we are interested in
-
-:::
+In this notebook, we will learn how to model behavioral choices by fitting a GLM-HMM. 
 
 
 ### Dataset
@@ -93,6 +70,34 @@ During this task, a sinusoidal grating with varying contrast [0\%-100\%] appeare
 *Task illustration. Modified from IBL et al. (2021)* <span id="cite2b"></span><a href="#ref2b">[2b]</a>.
 
 </div>
+
+
+
+We will replicate the main findings of Ashwood et al. (2022) <span id="cite1a"></span><a href="#ref1a">[1a]</a>. 
+
+![Ashwood paper figures to replicate](../../docs/source/_static/ashwood_paper_figs.svg)
+
+We will do this in four steps: 
+
+1. Download and preprocess the data
+2. Build a design matrix with three predictors
+3. Fit the model 
+4. Interpret the results
+
+</div>
+
+
+## 01. Download and preprocessing of data
+
+:::{admonition} What do we want to do in this subsection?
+:class: attention render-all
+
+1. Download the dataset
+2. See what it contains
+3. Subset the sessions we are interested in
+
+:::
+
 
 
 ### Data Streaming
@@ -172,6 +177,7 @@ ONE.setup(
     silent=True
 )
 ```
+
 <div class="render-presenter">
 2. Then we initialize our ONE object. We pass it "international" as a password, which is used to authenticate the alyx server we just connected to. This allows ONE to log in and access datasets that require authentication
 3. with cache_dir we are specifying where we want the data to be stored locally. When a dataset is requested, ONE first checks whether it already exists in the cache directory. If not, it downloads it and saves it here.
@@ -180,16 +186,17 @@ ONE.setup(
 
 ```{code-cell} ipython3
 :tags: [render-presenter]
+
 # Instantiate ONE object
 one = ONE(password = 'international', cache_dir=data_dir)
 ```
 
 <div class="render-user">
-
 ```{code-cell} ipython3
 # Instantiate ONE object
 one = # Complete
 ```
+
 </div>
 
 <div class="render-presenter">
@@ -198,6 +205,7 @@ one = # Complete
 - and see what we have: we are choosing this particular subject moving forward to replicate the figures in ashwood et al.
 - then the `load_aggregate` function retrieves a preprocessed table containing trial-by-trial information,
 - we can see that our output is a pandas dataframe
+- common in python for representing and analyzing tabular data
 </div>
 
 ```{code-cell} ipython3
@@ -211,11 +219,24 @@ trials = one.load_aggregate('subjects', subject, '_ibl_subjectTrials.table')
 print(type(trials))
 ```
 
+:::{admonition} Working without pynapple
+:class: note render-all
+
+Unlike the other notebooks in this workshop, here we work directly with `pandas` DataFrames and `numpy` arrays rather than pynapple objects. The IBL trial data is trial based, with no continuous time axis. Pynapple would not represent this well, so we keep it as a DataFrame and show how NeMoS interfaces with plain NumPy. NeMoS also accepts pynapple `Tsd`/`TsdFrame` objects directly, and we point out as we go where that would change the workflow (for example, how session boundaries are handled).
+:::
+
 <div class="render-presenter">
-- we can see how it looks. we scan see that it has one row per trial and one column per measured variable. 
+
+- we will work with pandas dataframes and numpy arrays rather than pynapple
+- The IBL trial data is trial based, with no continuous time axis. Pynapple would not represent this well
+- we keep ibl trial data as a dataframe and show how nemos works with plain numpy
+- So we can use nemos with both numpy and pandas, standard python data science packages, as well as pynapple objects
 </div>
 
 
+<div class="render-presenter">
+- we can see how it looks. we scan see that it has one row per trial and one column per measured variable. 
+</div>
 
 ```{code-cell} ipython3
 :tags: [render-all]
@@ -223,17 +244,16 @@ print(type(trials))
 # We can see how it looks like
 trials.head(5)
 ```
+
 <div class="render-presenter">
 - And by printing the columns we see all the information we could gather
 </div>
-
 
 ```{code-cell} ipython3
 :tags: [render-all]
 
 # We can see the information we get by printing the columns
 trials.columns
-
 ```
 
 <div class="render-presenter">
@@ -324,26 +344,12 @@ print(f"session \n(some) values: {trials.session.unique()[:5]}, data type: {tria
 </div>
 
 
-:::{admonition} Working without pynapple
-:class: note render-all
-
-Unlike the other notebooks in this workshop, here we work directly with `pandas` DataFrames and `numpy` arrays rather than pynapple objects. The IBL trial data is trial based, with no continuous time axis. Pynapple would not represent this well, so we keep it as a DataFrame and show how NeMoS interfaces with plain NumPy. NeMoS also accepts pynapple `Tsd`/`TsdFrame` objects directly, and we point out as we go where that would change the workflow (for example, how session boundaries are handled).
-:::
-
-<div class="render-presenter">
-
-- we will work with pandas dataframes and numpy arrays rather than pynapple
-- we keep ibl trial data as a dataframe and show how nemos works with plain numpy
-- The IBL trial data is trial based, with no continuous time axis. Pynapple would not represent this well
-- NeMos also accepts pynapple tsd and tsd frames directly, and I will point out what would change had we been dealing with those objects instead of numpy
-</div>
-
 ### Preprocessing: keeping only the relevant sessions and trials
 
 <div class="render-all">
 Now we will select the sessions we will fit the model to. We will apply three restrictions to match Ashwood et al. (2022) <a href="#ref1b">[1b]</a>:
 1. Only keep sessions in which the animal went through the entire training criteria 
-2. Subset blocks of 50-50 within those sessions
+2. Select blocks of 50-50 within those sessions
 3. Keep the blocks with less than 10 violations
 </div>
 
@@ -355,9 +361,9 @@ Now we will select the sessions we will fit the model to. We will apply three re
 - our third restriction is to keep blocks only with less than 10 violations within them
 </div>
 
-
 ```{code-cell} ipython3
 :tags: [render-all]
+
 workshop_utils.plot_proba_left(trials)
 ```
 
@@ -379,6 +385,7 @@ Its not here yet but if you were to go to the helper function, you'd see that we
 
 ```{code-cell} ipython3
 :tags: [render-all]
+
 viol_val = 0
 
 df_trials, valid_sessions = workshop_utils.select_sessions(
@@ -418,11 +425,11 @@ We are interested in building a design matrix with three predictors: previous ch
 - Previous choice: lagged version of current choice. We need to create an array for `choice`. 
 - Win stay lose shift: interaction between past choice and outcome. We need to create arrays for `choice`, `feedbackType`.
 - Signed contrast: sensory evidence in 1D. We need to create arrays for `contrastleft`, `contrastRight`.
-- We will also have a `session` array to inform our fit
 </div>
 
 
 <div class="render-presenter">
+- we'll go through all of these in more detail when we construct them, but this is just an overview.
 - The first predictor, previous choice, is a lagged version of current choice, and it reflects serial dependence on decisions. 
 - The second predictor, win-stay lose-shift, reflects the interaction between past choice and outcome. If a choice was rewarded on the previous trial, the predictor signals to "stay" (repeat that choice); if it was not rewarded, it signals to "switch" to the other alternative.
 - The third predictor, signed contrast, encodes sensory evidence
@@ -432,64 +439,9 @@ Let's go through the process of building the design matrix.
 
 <div class="render-presenter, render-user">
 
-```{code-cell} ipython3
-# We can select all the necessary values for the design matrix: 
-choices = df_trials['choice'].values
-stim_left = df_trials['contrastLeft'].values
-stim_right = df_trials['contrastRight'].values
-rewarded = df_trials['feedbackType'].values
-session = df_trials['session'].values
-```
-</div>
-
-### Preparation: get signed contrast 1d vector and subset valid trials
-
-<div class="render-presenter, render-user">
-
-We need to create our signed contrast 1d vector for our signed_contrast predictor. 
-
-- Replace `NaN` contrast values with `0` using `np.nan_to_num`.
-- Compute the signed contrast (difference between left and right)
++++
 
 </div>
-
-
-<div class="render-presenter">
-
-- the way this function works is it grabs a numpy array and then replaces all of the instances where in it there is a nan value with the value that you choose. 
-- In our case we are choosing 0 because a stimulus not being shown in a side is the same as an stimulus being shown with 0 contrast, and we want to be able to make a difference between this value so we do not want nans.
-
-</div>
-
-
-
-<div class="render-user">
-```{code-cell} ipython3
-# Replace nans with 0s
-stim_left = 
-stim_right = 
-# Compute the signed contrast (left - right)
-signed_contrast =
-# print the signed contrast for the first valid session
-select_session = df_trials["session"] == valid_sessions[0]
-signed_contrast[select_session]
-```
-</div>
-
-
-```{code-cell} ipython3
-# Replace nans with 0s
-stim_left = np.nan_to_num(stim_left, nan=0)
-stim_right = np.nan_to_num(stim_right, nan=0)
-
-# Compute the signed contrast
-signed_contrast = stim_left - stim_right
-
-# print the signed contrast for the first valid session
-select_session = df_trials["session"] == valid_sessions[0]
-signed_contrast[select_session]
-```
-
 
 <div class="render-presenter, render-user">
 
@@ -508,26 +460,34 @@ signed_contrast[select_session]
 
 </div>
 
-```{code-cell} ipython3
-:tags: [render-all]
+<div class="render-presenter, render-user">
 
-choices != viol_val
+```{code-cell} ipython3
+valid_choices_bool = df_trials['choice'].values != viol_val
 ```
 
-```{code-cell} ipython3
-:tags: [render-all]
+</div>
 
-valid_choices_idx = np.flatnonzero(choices != viol_val)
+<div class="render-presenter, render-user">
+
+```{code-cell} ipython3
+valid_choices_idx = np.flatnonzero(valid_choices_bool)
 valid_choices_idx
 ```
 
-```{code-cell} ipython3
-:tags: [render-all]
+</div>
 
-valid_choices_idx = np.flatnonzero(choices != viol_val)
-valid_choices_idx
+<div class="render-presenter, render-user">
+
+```{code-cell} ipython3
+# We can select all the necessary values for the design matrix: 
+choices = df_trials['choice'].values[valid_choices_idx]
+stim_left = df_trials['contrastLeft'].values[valid_choices_idx]
+stim_right = df_trials['contrastRight'].values[valid_choices_idx]
+rewarded = df_trials['feedbackType'].values[valid_choices_idx]
 ```
 
+</div>
 
 ### Predictor 1: previous choice
 
@@ -574,11 +534,10 @@ prev_choice_basis = nmo.basis.HistoryConv(1)
 
 
 <div class="render-user">
-
 ```{code-cell} ipython3
 # Example
-
 ```
+
 </div>
 
 
@@ -588,6 +547,7 @@ prev_choice_basis = nmo.basis.HistoryConv(1)
 # Example
 prev_choice_basis.compute_features([1,2,3,4])
 ```
+
 </div>
 
 ### Predictor 2: WSLS
@@ -604,7 +564,7 @@ prev_choice_basis.compute_features([1,2,3,4])
 <div class="render-user, render-presenter">
 WSLS is an interaction of previous choice with previous reward: $WSLS_t = c_{t-1} \cdot r_{t-1}$. If a choice was rewarded on the previous trial, the predictor signals to "stay" (repeat that choice); if it was not rewarded, it signals to "switch" to the other alternative.
 
-To capture interaction between variables, we can use a [multiplicative basis object](https://nemos.readthedocs.io/en/latest/background/basis/plot_02_ND_basis_function.html#n-dimensional-basis), which in this case takes an element wise multiplication.
+To capture interaction between variables, we can use a [multiplicative basis object](https://nemos.readthedocs.io/en/latest/background/basis/plot_02_ND_basis_function.html#n-dimensional-basis), which in this case performs an element wise multiplication.
 
 </div>
 
@@ -617,26 +577,22 @@ To capture interaction between variables, we can use a [multiplicative basis obj
 
 </div>
 
-<div class="render-user">
 
+<div class="render-user">
 ```{code-cell} ipython3
+:tags: [render-user]
 # Create lagged reward basis
 prev_reward_basis = 
-
 # Multiply lagged reward basis with the lagged choice basis
 wsls_basis = 
-
 # Print
-
 ```
-
 </div>
 
 
 <div class="render-presenter">
 
 ```{code-cell} ipython3
-
 # Create lagged reward basis
 prev_reward_basis = nmo.basis.HistoryConv(1)
 
@@ -646,37 +602,17 @@ wsls_basis = prev_choice_basis*prev_reward_basis
 # Print
 print(wsls_basis)
 ```
+
 </div>
-
-
-<div class="render-presenter, render-user">
-
-We can see what this is doing by using a non-nemos example.
-</div>
-
 
 <div class="render-user, render-presenter">
+We can see what this is doing by using an example.
 
 ```{code-cell} ipython3
 choices_example = np.array([1,0,1,0])
 rewards_example = np.array([1,2,3,4])
 
-# WSLS equivalent to multiply
-multiply = choices_example * rewards_example
-          
-# Shift and drop last to keep the same array length
-shift = np.concatenate(([np.nan], multiply[:-1]))
-shift
-```
-
-</div>
-
-<div class="render-user, render-presenter">
-And we can see that the same happens when we apply compute features
-
-```{code-cell} ipython3
 wsls_basis.compute_features(choices_example, rewards_example)
-
 ```
 
 </div>
@@ -685,7 +621,7 @@ wsls_basis.compute_features(choices_example, rewards_example)
 
 
 <div class="render-presenter">
-So we create a choice example array, a rewards example array, we multiply them together and we shift and drop the last element to keep the same array length. We are shifting because we want the previous choice and previous reward interaction as predictors for the current trial.
+The results is an element-wise multiplication shifted by one. so the first element is 1*1 1. the second is 2*0=0 and so on. the first element is 1 because of the same reason as previous choice predictor: in nemos, we apply the computation where it is well defined and where it is not, we pad with nan.
 
 </div>
 
@@ -703,6 +639,52 @@ So we create a choice example array, a rewards example array, we multiply them t
 
 <div class="render-user, render-presenter">
 Now we need our third predictor, signed contrast. This encodes sensory evidence in 1D. Within this predictor, magnitude reflects strength of evidence and sign encodes direction. 
+
+#### Preparation: get signed contrast 1d vector and subset valid trials
+
+<div class="render-presenter, render-user">
+
+We need to create our signed contrast 1d vector for our signed_contrast predictor. 
+
+- Replace `NaN` contrast values with `0` using `np.nan_to_num`.
+- Compute the signed contrast (difference between left and right)
+
+</div>
+
+<div class="render-presenter">
+
+- the way this function works is it grabs a numpy array and then replaces all of the instances where in it there is a nan value with the value that you choose. 
+- In our case we are choosing 0 because a stimulus not being shown in a side is the same as an stimulus being shown with 0 contrast, and we want to be able to make a difference between this value so we do not want nans.
+
+</div>
+
+
+
+<div class="render-user">
+```{code-cell} ipython3
+# Replace nans with 0s
+stim_left = 
+stim_right = 
+# Compute the signed contrast (left - right)
+signed_contrast =
+# print the signed contrast for the first valid session
+select_session = df_trials["session"] == valid_sessions[0]
+signed_contrast[select_session]
+```
+</div>
+
+```{code-cell} ipython3
+# Replace nans with 0s
+stim_left = np.nan_to_num(stim_left, nan=0)
+stim_right = np.nan_to_num(stim_right, nan=0)
+
+# Compute the signed contrast
+signed_contrast = stim_left - stim_right
+
+# print the signed contrast for the first valid session
+select_session = df_trials["session"] == valid_sessions[0]
+signed_contrast[select_session]
+```
 
 We already created our vector at the beginning of the section, and we want to keep it as it is. However we also need to have it as a NeMoS basis object so we can create our design matrix. For that, we will use the```IdentityEval``` basis.
 
@@ -727,17 +709,17 @@ stimuli_basis =
 # Identity basis for stimuli
 stimuli_basis = nmo.basis.IdentityEval()
 ```
+
 <div class="render-presenter">
 - I am making an example here real quick. I just want to show that if we use compute features with this list of 1 2 3 4, we get the exact same list, but now we have it as a nemos basis object
 
 </div>
 
 <div class="render-user">
-
 ```{code-cell} ipython3
 # Example
-
 ```
+
 </div>
 
 
@@ -747,6 +729,7 @@ stimuli_basis = nmo.basis.IdentityEval()
 # Example
 stimuli_basis.compute_features([1,2,3,4])
 ```
+
 </div>
 
 ### Combining features and computing them
@@ -776,33 +759,20 @@ Now that we have all our bases, we can combine them into an additive basis and a
 <div class="render-user">
 ```{code-cell} ipython3
 # Create an additive basis using our three components
-basis_object = (
-    # Stimuli basis
-
-    # WSLS
-
-    # Previous choice
-
-)
-
+# Stimuli, wsls & previous choice
+basis_object = # Complete
 print(basis_object)
 ```
-</div>
 
+</div>
 
 ```{code-cell} ipython3
 # Create an additive basis using our three components
-basis_object = (
-    # Stimuli basis
-    stimuli_basis +      
-    # WSLS
-    wsls_basis +    
-    # Previous choice 
-    prev_choice_basis    
-)
-
+# Stimuli, wsls & previous choice
+basis_object = (stimuli_basis + wsls_basis + prev_choice_basis)
 print(basis_object)
 ```
+
 <div class="render-user, render-presenter">
 
 - Create the design matrix by calling `compute_features`. Select the valid trials by applying the `valid_choices_idx` boolean mask.
@@ -826,6 +796,11 @@ Even though we need just a few lines of code, there is a lot going on. Here's a 
 - coma,
 - then we put reward
 - and finally the previous choice vector.
+
+the first column of the result is the signed contrast, so it takes values between -1 and 1. A value of -1 is strong evidence towards right, and +1 is strong evidence towards left
+the second and third columns are win stay lose shift. in both cases, a +1 means choose left and -1 choose right. In the case of win stay lose shift, this was the result of the interaction of previous choice and reward, and in case of previous choice this is just the lagged choice/
+
+We went from 4 inputs to 3 columns.
 - 
 </div>
 
@@ -843,23 +818,25 @@ X_unnormalized[10:15]
 ```
 </div>
 
+<div class="render-presenter">
 
 ```{code-cell} ipython3
 # Compute features
 X_unnormalized = basis_object.compute_features(
     # input 1 : processed with stimuli_basis
-    signed_contrast[valid_choices_idx],
+    signed_contrast,
     # input 2 : wsls input 1: choice
-    choices[valid_choices_idx],
+    choices,
     # input 3 : wsls input 2: reward
-    rewarded[valid_choices_idx],
+    rewarded,
     # input 4 : processed with prev_choice
-    choices[valid_choices_idx],
+    choices,
 )
 
 X_unnormalized[10:15]
 ```
 
+</div>
 
 And that's it! We have our unnormalized design matrix with signed contrast, win-stay lose-shift and previous choice as predictors.
 
@@ -895,7 +872,6 @@ X[10:15]
 ```
 </div>
 
-
 ```{code-cell} ipython3
 from scipy.stats import zscore
 
@@ -906,7 +882,6 @@ X = np.copy(X_unnormalized)
 X[:, 0] = zscore(X[:, 0])
 X[10:15]
 ```
-
 
 :::{admonition} Why do we normalize our stimuli predictor?
 :class: question render-user
@@ -935,6 +910,8 @@ Now that we've defined our covariates, we can visualize the design matrix that w
 
 Each row corresponds to a trial, and each column corresponds to one predictor: signed contrast, WSLS, and previous choice. The color indicates the value of the predictor on each trial.
 
+We built the design matrix this way to assess the degree to which decisions in this task were driven by sensory evidence or different behavioral strategies.
+
 For a given latent state, the model learns a weight for each of these predictors. These weights are combined with the design matrix to compute a linear score, (X\beta).
 
 A positive score favors a left choice, while a negative score favors a right choice. We then pass this score through a sigmoid function to convert it into a probability of choosing left.
@@ -947,11 +924,10 @@ In the GLM-HMM, each latent state has its own set of weights, so different state
 
 ```{code-cell} ipython3
 :tags: [render-all]
- 
-# Plot an heatmap showing the model design
-workshop_utils.plot_design_matrix(X, choices, valid_choices_idx);
-```
 
+# Plot an heatmap showing the model design
+workshop_utils.plot_design_matrix(X, choices);
+```
 
 :::{admonition} What did we do in this subsection?
 :class: attention render-all
@@ -999,140 +975,108 @@ We are going to fit a Bernoulli GLM-HMM to model binary choices. For a Bernoulli
 
 
 <div class="render-user, render-presenter">
+
 ```{code-cell} ipython3
 choices[choices==-1] = 0
 print(choices)
 ```
+
 </div>
 
 
 ### Creating session boundaries
 
-<div class="render-presenter">
+<div class="render-user, render-presenter">
 Importantly, we don't fit all the trials as one continuous block. The data come as separate sessions that the mouse completed over multiple days, and we fit the model on all of them together. For our model to be accurate, we need to tell it when our session boundaries are: we don't want it to compute all sessions as if they were one. 
 
-<div class="render-presenter">
-Now we are going to use the flatnonzero numpy function to  get the indices of all session starts. 
-- We can see our array of session. `session` holds one session id per trial. 
-- Comparing `session[1:]` (every trial but the first) with `session[:-1]` (every trial but the last) yields a boolean array that is `True` wherever a trial's session id differs from the previous trial's — that is, exactly at the session boundaries. 
-- According to our print, session boundaries occur at trial 89
-- we can use `np.flatnonzero` to get the indices where this is `True`. we put our argument is our array session transition.
-, and we add `1` because the comparison is shifted by one (position `i` in the comparison corresponds to trial `i+1`). - The result is the array of indices at which a new session begins.
-
-</div>
-
-<div class="render-presenter, render-user">
-We do not want to fit all the trials as one continous block! 
-- Create a vector containing the indices of each session start using ```np.flatnonzero()```
-</div>
-
-
-<div class="render-user, render-presenter">
-
-```{code-cell} ipython3
-# Print session array
-print(session)
-```
-
-</div>
-
-<div class="render-presenter">
-
-- According to our print, session boundaries occur at trial 89
+Let's see an example of session break.
 
 </div>
 
 <div class="render-user, render-presenter">
 
 ```{code-cell} ipython3
-# Session transitions
-session_change = session[1:] != session[:-1]
-# See that transition occurs at position 
-session_change[88:92]
-```
+# Create a session array
+session = df_trials['session'].values
 
-</div>
-
-<div class="render-presenter">
-
-- we can use `np.flatnonzero` to get the indices where this is `True`. we put our argument is our array session transition.
-
-</div>
-
-<div class="render-user">
-
-```{code-cell} ipython3
-# Session starts lagged
-session_change_lagged = # Complete
-session_change_lagged[:10]
-```
-
-</div>
-
-<div class="render-presenter">
-
-```{code-cell} ipython3
-# Session starts lagged
-session_change_lagged = np.flatnonzero(session_change)
-session_change_lagged[:10]
-```
-
-</div>
-
-<div class="render-presenter">
-
-- we saw before that the transition occured at position 89, 
-- but if we confirm this by printing those sessions we see that the transition in fact occurs
-- in trial 90
-- this mismatch happens because the comparison is shifted by one
-</div>
-
-<div class="render-user, render-presenter">
-
-```{code-cell} ipython3
-# See that transition occurs at position 90
+# Session break
 session[88:92]
 ```
 
 </div>
 
+<div class="render-presenter, render-user">
+
+We can pass the session boundaries in different ways. If we are using numpy arrays, we can pass an array of booleans indicating True for the beginning of each session or an array with the indices of the session changes. If we were using Pynapple, the session boundaries would be inherited from the Pynaple objects themselves.
+
+Now, we will build a boolean array to indicate the session changes.
+
+</div>
+
 <div class="render-presenter">
-
-- so to solve this we just add we add `1`. The result is the array of indices at which a new session begins.
-
+- Comparing `session[1:]` (every trial but the first) with `session[:-1]` (every trial but the last) yields a boolean array that is `True` wherever a trial's session id differs from the previous trial's — that is, exactly at the session boundaries. 
+- According to our print, session boundaries occur at trial 89
 </div>
 
 <div class="render-user">
-
 ```{code-cell} ipython3
-# Session starts
-session_transitions = # Complete
-session_transitions[:10]
+# Session transitions
+session_changes = # Complete
+session_changes[88:92]
 ```
-
 </div>
-
 
 <div class="render-presenter">
 
 ```{code-cell} ipython3
-# Session starts
-session_transitions = session_change_lagged + 1
-session_transitions[:10]
+# Session transitions
+session_changes = session[1:] != session[:-1]
+
+session_changes[88:92]
 ```
 
 </div>
 
-<div class="render-presenter">
-Finally, we also add the 0 in the session starts to make sure we include the first session!
-</div>
+<div class="render-presenter, render-user">
 
+Our sessions are shifted? And what about the first session?
+
+</div>
 
 <div class="render-presenter, render-user">
 
 ```{code-cell} ipython3
-# Add first session
-session_starts = np.concatenate(([0], session_transitions))
+# See first session
+session_changes[:10]
+```
+
+</div>
+
+<div class="render-presenter">
+- we saw in our first print that the transition occured at position 90, 
+- but our session change lagged shows 89
+- this mismatch happens because the comparison is shifted by one
+- Another issue here is that the first session is not considered whilst the first session is indeed a first session.
+- So we will solve these two issues at the same time by adding a True at the beginning of the array
+- at the same time, this corrects the shift, and adds that the first session is indeed a beginning of session
+- The result is the array of booleans indicating starts of sessions as True
+</div>
+
+
+<div class="render-presenter">
+
+```{code-cell} ipython3
+session_starts = np.concatenate(([True], session_changes))
+
+session_starts[88:92]
+```
+
+</div>
+
+<div class="render-user">
+```{code-cell} ipython3
+session_starts = # Complete
+session_starts[88:92]
 ```
 
 </div>
@@ -1155,7 +1099,7 @@ Let's initialize the ```GLMHMM``` object.
 - we will initialize our ```GLMHMM``` object with 3 states, following that work
 - We will also set `regularizer="Ridge"` to penalize large weights
 - Set a seed for our intiial parameters
-- We need this seed because The likelihood of a GLM-HMM is non-convex, so the EM algorithm used to fit it can converge to different local optima depending on the starting parameters. 
+- We need this seed because The likelihood of a GLM-HMM is non-convex, so the EM algorithm used to fit it can converge to different local optima depending on the starting parameters. That is, there are multiple solutions.
 - NeMoS can set the initial parameters for you:
 - by default, the per-state intercepts are set to match the empirical choice probability, and the GLM coefficients are drawn from a Gaussian centered at zero with a small standard deviation. The `seed` argument controls this random draw, so in practice you should refit the model with several seeds and keep the solution with the highest log-likelihood.
 - Talk about transitions and initial probabilities as well.
@@ -1170,11 +1114,13 @@ Let's initialize the ```GLMHMM``` object.
 ```{code-cell} ipython3
 n_states = 3
 seed=jax.random.PRNGKey(12)
-
 model = nmo.glm_hmm.GLMHMM(
 model
 ```
+
 </div>
+
+<div class="render-presenter">
 
 ```{code-cell} ipython3
 n_states = 3
@@ -1189,6 +1135,8 @@ model = nmo.glm_hmm.GLMHMM(
 
 model
 ```
+
+</div>
 
 <div class="render-presenter">
 
@@ -1206,13 +1154,8 @@ Once we created our object, we can fit our model. The fit function takes two man
 </div>
 
 ```{code-cell} ipython3
-model.fit(
-    X, 
-    choices,
-    session_starts=session_starts
-)
+model.fit(X, choices, session_starts=session_starts)
 ```
-
 
 That's all it takes!
 
@@ -1278,12 +1221,10 @@ Before we can do anything we will quickly relabel the states. Latent states are 
 
 </div>
 
-
 ```{code-cell} ipython3
 :tags: [hide-input, render-all]
-    
-model = workshop_utils.relabel(model)
 
+model = workshop_utils.relabel(model)
 ```
 
 <div class="render-presenter">
@@ -1306,8 +1247,6 @@ The GLM coefficients and intercept, and the HMM initial and transition probabili
 
 Let's print them
 </div>
-
-
 
 ```{code-cell} ipython3
 :tags: [render-all]
@@ -1347,16 +1286,16 @@ We can plot the GLM weights obtained for our 3-state model.
 ```{code-cell} ipython3
 :tags: [render-all]
 
-workshop_utils.plot_glm_weights(model);
+workshop_utils.plot_glm_weights(model)
 ```
 
-<div class="render-presenter, render-user">
+<div class="render-presenter">
 
 - State 1 have larger weight on the stimulus and low on the other predictors.
 - The bias weight is larger in absolute value for state 2 and 3, but of opposite sign. (>0 : left; <0 : right)
 
 </div>
-
+ 
 
 :::{admonition} How does this look in the original paper?
 :class: question render-all
@@ -1373,6 +1312,8 @@ workshop_utils.plot_glm_weights(model);
 
 We can also see the fitted transition matrix for our three-state model. This describes the transition probabilities among the different states, each corresponding to a different decision-making strategy. Large entries in the diagonal indicate a high probability of remaining in the same state for multiple trials in a row.
 
+If you compare the resulting matrix with the original one, you will see that the values are not exactly the same. This is because our method was slightly different. They used priors for their fitting, while we did not. Nevertheless, the results are pretty similar! everyone that has tried to replicate results before can attest to how hard this is. So it's nice to see that even though we did not use exactly the same fitting settings, our analysis does confirm their results! This speaks about the robustness of the model and also about how high quality the data is.
+
 </div>
 
 <div class="render-presenter, render-user">
@@ -1388,6 +1329,7 @@ The utility function below plots the heatmap.
 
 workshop_utils.plot_transition_matrix(model);
 ```
+
 :::{admonition} How does this look in the original paper?
 :class: question render-all
 :class: dropdown
@@ -1403,9 +1345,12 @@ workshop_utils.plot_transition_matrix(model);
 - To better understand the temporal structure of decision making behavior, we can compute the probability of being in each state at each trial, conditioned on the entire observed sequence. 
 - For this, we can use ```smooth_proba```. This method uses the forward-backward algorithm to incorporate information from past and future observations. 
 - [add to users but dont say] It answers the question: "Given all observations, what is the probability that the system was in state $k$ at time $t$?"
-- ```smooth_proba``` takes three arguments: a design matrix `X`, `y` the observed choices and the session starts. The output is either a ```TsdFrame``` or an array of  posterior probabilities. Each row sums to 1 and represents the probability distribution over states at that time point.
+- ```smooth_proba``` takes three arguments: a design matrix `X`, `y` the observed choices and the session starts. The output is either a ```TsdFrame``` or an array of  posterior probabilities. 
+- IF you look at each row you can see that it looks like they sum to 1. That's because each row represents represents the probability distribution over states at that trial.
 
--The first trial of each session is `NaN`: the posterior depends on the transition from the previous trial's state, which doesn't exist at a session start. Hence we mask out the NaNs before checking that the rows sum to one.
+-However, The first trial of each session is `NaN`: the posterior depends on the transition from the previous trial's state, which doesn't exist at a session start. Hence we mask out the NaNs before checking that the rows sum to one.
+
+We can check whether all rows in fact sum to 1. 
 
 [have prepared an admonition with equation]
 
@@ -1432,11 +1377,10 @@ print(f"First five posteriors \n{posteriors[:5]} \n")
 valid = ~np.isnan(posteriors).any(axis=1)
 print(
     "Does the posterior sum to one?", 
-    np.allclose( , 1)
+    np.allclose(posteriors[valid].sum(axis=1), 1)
 )
 ```
 </div>
-
 
 ```{code-cell} ipython3
 # Compute smooth_proba
@@ -1455,18 +1399,16 @@ print(
 )
 ```
 
-
 <div class="render-all">
 Let's plot the first 90 trials, corresponding to the first session.
 </div>
-
 
 ```{code-cell} ipython3
 :tags: [render-all]
 
 colors = ["#ff7f00", "#4daf4a", "#377eb8"]
 for i, c in enumerate(colors):
-    plt.plot(posteriors[:90, i], color=c)
+    plt.plot(posteriors[4950:5039, i], color=c)
 ```
 
 <div class="render-all">
@@ -1506,8 +1448,6 @@ For this, we need the inferred sequence of states, this can be obtained using th
 
 This method finds the single most likely sequence of hidden states that best explains the observed data: the state sequence that maximizes the joint probability of states and observations. 
 
-- It takes three mandatory parameters, a matrix of predictors `X` of shape `(n_timepoints,n_features)`, a `np.array` or `nap.Tsd` of observations of shape `(n_time_points,)`, a `session_starts` in case of not using Pynapple objects, 
-- and the format of the returned states, either in one-hot encoding format or as an array of shape `(n_time_points,)` containing the decoded state at each timepoint.
 </div>
 
 <div class="render-presenter">
@@ -1520,7 +1460,8 @@ This method finds the single most likely sequence of hidden states that best exp
 
 - This method finds the single most likely sequence of hidden states that best explains the observed data: the state sequence that maximizes the joint probability of states and observations. 
 
-- It takes three mandatory parameters, a matrix of predictors `X` of shape `(n_timepoints,n_features)`, a `np.array` or `nap.Tsd` of observations of shape `(n_time_points,)`, a `session_starts` in case of not using Pynapple objects, 
+
+- It takes three mandatory parameters, a matrix of predictors `X` of shape `(n_timepoints,n_features)`, a `np.array` or `nap.Tsd` of observations of shape `(n_time_points,)`, a `session_starts` in case of not using Pynapple objects, [SAY LOOKING AT DOCSTRING]
 - and the format of the returned states, either in one-hot encoding format or as an array of shape `(n_time_points,)` containing the decoded state at each timepoint.
 
 </div>
@@ -1540,9 +1481,9 @@ decoded_states
 ```
 </div>
 
-
 ```{code-cell} ipython3
 :tags: [render-presenter]
+
 # get output of viterbi in one-hot encoding
 decoded_states = model.decode_state(
     X,
@@ -1587,9 +1528,17 @@ From this we can compute the fractional occupancy, while correctly filtering out
 
 # calculate occupancy
 print(f"Not nan? \n {~np.isnan(decoded_states)}")
+```
+
+```{code-cell} ipython3
+:tags: [render-all]
 
 valid = np.all(~np.isnan(decoded_states), axis=1)
 print(f"valid? \n {valid}")
+```
+
+```{code-cell} ipython3
+:tags: [render-all]
 
 frac_occupancy_viterbi= np.nansum(decoded_states, axis=0) / valid.sum()
 print(f"Fraction of occupancy \n {frac_occupancy_viterbi} \n")
@@ -1644,10 +1593,25 @@ accuracies_to_plot_viterbi[0] = total_accuracy
 ```{code-cell} ipython3
 # mask out the 0 contrast stimuli
 mask =
+```
+</div>
+
+<div class="render-user">
+```{code-cell} ipython3
 # compute stimulus and choice side
 stim_side =
+```
+</div>
+
+<div class="render-user">
+```{code-cell} ipython3
 # get the correct choices boolean
 correct_choices =
+```
+</div>
+
+<div class="render-user">
+```{code-cell} ipython3
 # compute the total accuracy applying the mask
 total_accuracy =
 # store in an array of dim 4
@@ -1655,6 +1619,8 @@ accuracies_to_plot_viterbi = np.zeros(4)
 accuracies_to_plot_viterbi[0] = total_accuracy
 ```
 </div>
+
+
 
 <div class="render-presenter"
 
@@ -1664,7 +1630,9 @@ And then we can use our output of ```decode_state``` to segment the trials into 
 
 - We loop over all states
 - `decoded_states[:, s] == 1` selects trials assigned to state `s`
-- We combine this with `mask` to exclude invalid trials
+- in the variable accuracy per state we store the correct choices that correspond to that state and that are choices of trials in which there was a correct choice (mask). we do this using the boolean AND.
+- this logic statement is true only when both cases are true (it is in the current state and it is a valid trial)
+- we take the mean of this
 - so the result, `in_state`  is a boolean array indicating the valid trials belonging to state `s`
 - `correct_choices[in_state]` extracts the correctness values for those trials
 - Taking the `.mean()` gives the proportion of correct trials in that state, since `True=1` and `False=0`
@@ -1687,8 +1655,8 @@ And then we can use our output of ```decode_state``` to segment the trials into 
 ```{code-cell} ipython3
 accuracy_per_state = np.zeros(n_states)
 for s in range(n_states):
-  in_state = (decoded_states[:, s] == 1) & mask
-  accuracy_per_state[s] = correct_choices[in_state].mean()
+  in_state = (decoded_states[:, s] == 1)
+  accuracy_per_state[s] = correct_choices[in_state & mask].mean()
 
 accuracies_to_plot_viterbi[1:] = accuracy_per_state
 ```
@@ -1776,6 +1744,8 @@ model.fit(X, choices, session_starts=session_starts)
 - Try varying the regularization strength and see what happens to the learned GLM parameters. Do the results still hold as you decrease the regularization strength? What happens to the model predictions? Try cross-validating the regularization strength and see how the optimal regularizer compares with the one used here (the nemos default, which is 1).
 
 - What happens when you add or remove states? Can you cross-validate the number of states? Which number seems optimal according to your cross-validation procedure? Can you get a better cross-validated likelihood with more states?
+
+- What happens if you subset to other trials (for example, biased trials)? 
 
 </div>
 

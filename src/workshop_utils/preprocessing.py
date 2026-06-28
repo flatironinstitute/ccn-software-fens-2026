@@ -8,9 +8,17 @@ __all__ = [
 
 
 def relabel(model):
+    """
+    Returns
+    -------
+    model : 
+        Reordered model
+    relanel :
+        Paper matching labels
+    """
     # the intercept is the bias term
-    bias_left = np.flatnonzero(model.intercept_ < -2)
-    bias_right = np.flatnonzero(model.intercept_ > 2)
+    bias_right = np.flatnonzero(model.intercept_ < -2)
+    bias_left = np.flatnonzero(model.intercept_ > 2)
     # less biased (smallest |intercept|) is the engaged state
     engaged_state = np.argmin(np.abs(model.intercept_))
     relabel = np.concatenate([[engaged_state], bias_left, bias_right])
