@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import pathlib
+
 import pynapple as nap
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -32,6 +34,7 @@ __all__ = [
     "plot_posteriors",
     "plot_accuracy_and_occupancy",
     "animate_2d_movie",
+    "plot_proba_left"
 ]
 
 
@@ -954,7 +957,7 @@ def plot_glm_weights(model, n_states=3):
     # Change order of weights so output matches Ashwood et al. (2022) 2e plot
     recovered_weights = np.zeros((n_features, n_states))
     recovered_weights[0, :] = model.coef_[0, :]  # stimulus
-    recovered_weights[1, :] = model.intercept_  # bias
+    recovered_weights[1, :] = model.intercept_   # bias
     recovered_weights[2, :] = model.coef_[2, :]  # prev choice, wsls
     recovered_weights[3, :] = model.coef_[1, :]  # prev choice, wsls
 
@@ -963,8 +966,8 @@ def plot_glm_weights(model, n_states=3):
 
     state_labels = [
         'State 1: "engaged"',
-        'State 2: "biased right"',
-        'State 3: "biased left"',
+        'State 2: "biased left"',
+        'State 3: "biased right"',
     ]
 
     for state in range(n_states):
@@ -1042,7 +1045,14 @@ def plot_transition_matrix(model, n_states=3):
     return fig
 
 
-def plot_design_matrix(X, choices, valid_choices_idx, n_trials=20):
+# coin-flip icon (rasterised from docs/source/_static/game-icons--coinflip.svg)
+# used as the stochastic-emission marker in plot_design_matrix
+_COINFLIP_ICON = (
+    pathlib.Path(__file__).parents[2] / "docs" / "source" / "_static" / "coinflip.png"
+)
+
+
+def plot_design_matrix(X, choices, n_trials=20):
     """Plot the GLM-HMM design matrix and the associated choices side by side.
 
     The left heatmap shows the first ``n_trials`` rows of the design matrix
@@ -1056,9 +1066,6 @@ def plot_design_matrix(X, choices, valid_choices_idx, n_trials=20):
         Design matrix of shape ``(n_trials_total, n_features)``.
     choices :
         Choice values (e.g. a ``pynapple.Tsd`` or array) before validity
-        filtering; ``choices[valid_choices_idx]`` selects the valid trials.
-    valid_choices_idx :
-        Integer indices of the valid (non-violation) trials into ``choices``.
     n_trials :
         Number of trials (rows) to display. Default 20.
 
@@ -1067,31 +1074,44 @@ def plot_design_matrix(X, choices, valid_choices_idx, n_trials=20):
     matplotlib.figure.Figure
         The figure with the two heatmaps.
     """
+    from matplotlib.colors import BoundaryNorm, ListedColormap
+    from matplotlib.patches import FancyArrowPatch
+    import matplotlib.image as mpimg
+
     # width ratio 3:1 so the 3-column design matrix and 1-column choices end
     # up with the same (square) cell size, hence the same height and alignment.
     fig, axes = plt.subplots(
         1,
         2,
-        figsize=(4, 8),
+        figsize=(6, 8),
         sharey=True,
-        gridspec_kw={"width_ratios": [3, 1], "wspace": 0.9},
+        gridspec_kw={"width_ratios": [3, 1], "wspace": 2.0},
     )
+    # wide gap between the two heatmaps to fit the design colorbar + "x beta"
+    # + arrow; right margin leaves room for the choice colorbar and its labels
+    fig.subplots_adjust(left=0.08, right=0.78, top=0.92, bottom=0.08)
 
-    # left → neutral → right
-    cmap_cat = LinearSegmentedColormap.from_list(
+    # continuous left → neutral → right map for the real-valued design matrix
+    cmap_design = LinearSegmentedColormap.from_list(
         "bias_map", ["#377eb8", "white", "#4daf4a"]
     )
+    # the choice is binary, so it gets its own two-colour map:
+    # -1 (right) → blue, +1 (left) → green
+    cmap_choice = ListedColormap(["#377eb8", "#4daf4a"])
+    norm_choice = BoundaryNorm([-2, 0, 2], cmap_choice.N)
 
-    # dedicated colorbar axes so the colorbar doesn't distort the choices heatmap
-    cbar_ax = fig.add_axes([0.92, 0.3, 0.03, 0.4])
+    # dedicated colorbar axes (repositioned after the first draw)
+    cbar_design = fig.add_axes([0.70, 0.3, 0.022, 0.4])
+    cbar_choice = fig.add_axes([0.82, 0.3, 0.022, 0.4])
 
     # ---- heatmap 1: full design matrix ----
     sns.heatmap(
         X[:n_trials, :],
         ax=axes[0],
         square=True,
-        cmap=cmap_cat,
-        cbar=False,
+        cmap=cmap_design,
+        cbar=True,
+        cbar_ax=cbar_design,
         vmin=-2.4,
         vmax=2.4,
         linewidths=0.5,
@@ -1106,22 +1126,23 @@ def plot_design_matrix(X, choices, valid_choices_idx, n_trials=20):
     axes[0].set_ylabel("Trials")
     axes[0].set_title("Design \nmatrix")
 
-    # ---- heatmap 2: choices ----
+    # ---- heatmap 2: choices (separate bi-colour scale) ----
     sns.heatmap(
-        choices[valid_choices_idx].reshape(-1, 1)[:n_trials],
+        choices.reshape(-1, 1)[:n_trials],
         ax=axes[1],
         square=True,
-        cmap=cmap_cat,
+        cmap=cmap_choice,
+        norm=norm_choice,
         cbar=True,
-        cbar_ax=cbar_ax,
-        vmin=-2.4,
-        vmax=2.4,
+        cbar_ax=cbar_choice,
         linewidths=0.5,
         linecolor="black",
     )
     axes[1].set_xticks([0.5], ["Choices"], rotation=90)
     # the choices heatmap re-adds y-ticks via sharey; hide them again
     axes[1].set_yticks([])
+    cbar_choice.set_yticks([-1, 1])
+    cbar_choice.set_yticklabels(["Right", "Left"])
 
     # seaborn hides the spines, so the outer cell borders look clipped; re-enable
     # them to close the black grid around each heatmap
@@ -1136,18 +1157,49 @@ def plot_design_matrix(X, choices, valid_choices_idx, n_trials=20):
     pos0 = axes[0].get_position()
     pos1 = axes[1].get_position()
 
-    # match the colorbar height to the heatmaps
-    cbar_ax.set_position([0.92, pos1.y0, 0.03, pos1.height])
+    # each colorbar sits right next to its own heatmap, matching its height
+    cbar_design.set_position([pos0.x1 + 0.012, pos0.y0, 0.022, pos0.height])
+    cbar_choice.set_position([pos1.x1 + 0.012, pos1.y0, 0.022, pos1.height])
 
-    # read the two heatmaps as a matrix product: design x beta = observations
+    mid_y = (pos0.y0 + pos0.y1) / 2
+
+    # "x beta" sits in the gap after the design colorbar...
     fig.text(
-        (pos0.x1 + pos1.x0) / 2,
-        (pos0.y0 + pos0.y1) / 2,
-        r"$\times\ \beta\ =$",
-        ha="center",
+        pos0.x1 + 0.08,
+        mid_y,
+        r"$\times\,\beta$",
+        ha="left",
         va="center",
-        fontsize=16,
+        fontsize=15,
     )
+
+    # ...then an arrow to the choices. The arrow (rather than "=") leaves room
+    # for the implied nonlinearity + Bernoulli emission, illustrated by the
+    # coin-flip icon centred on top of the arrow. Keep a clear gap after beta.
+    x_s = pos0.x1 + 0.175
+    x_e = pos1.x0 - 0.008
+    fig.add_artist(
+        FancyArrowPatch(
+            (x_s, mid_y),
+            (x_e, mid_y),
+            transform=fig.transFigure,
+            arrowstyle="-|>",
+            mutation_scale=16,
+            lw=1.6,
+            color="black",
+        )
+    )
+
+    # Put the coin on its own axes so placement is independent of dpi/bbox:
+    # a square box (in inches) centred on the arrow, sitting just above it.
+    fig_w, fig_h = fig.get_size_inches()
+    coin_w = 0.11  # figure-fraction width
+    coin_h = coin_w * fig_w / fig_h  # keep the box square in inches
+    coin_ax = fig.add_axes(
+        [(x_s + x_e) / 2 - coin_w / 2, mid_y + 0.025, coin_w, coin_h]
+    )
+    coin_ax.imshow(mpimg.imread(str(_COINFLIP_ICON)))
+    coin_ax.axis("off")
 
     plt.show()
     return fig
@@ -1275,6 +1327,22 @@ def plot_accuracy_and_occupancy(frac_occupancy, accuracies_to_plot):
     plt.show()
     return fig
 
+
+def plot_proba_left(trials):
+    # Choose example session
+    sess_ex = '726b6915-e7de-4b55-a38e-ff4c461211d3'
+    # Subset session trials
+    trials_sess = trials[trials.session == sess_ex].reset_index()
+
+    # Plot
+    plt.plot(trials_sess["probabilityLeft"][:300])
+    plt.axvspan(0, 90, color="skyblue", alpha=0.3, label="first 90 trials")
+    plt.axvline(90, color="skyblue", linestyle="--")
+
+    plt.ylabel("P(stimulus on the left)")
+    plt.xlabel("Trial number")
+    plt.show()
+    return None
 
 class Plot2DMovie:
     def __init__(
