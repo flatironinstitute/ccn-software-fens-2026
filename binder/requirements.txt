@@ -1,0 +1,3 @@
+jax[cuda13]
+ccn-software-fens-2026 @ git+https://github.com/flatironinstitute/ccn-software-fens-2026.git
+

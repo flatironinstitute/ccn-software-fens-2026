@@ -1,12 +1,9 @@
 #!/bin/bash
 set -xuo pipefail
 
-CONDA_OVERRIDE_CUDA="12.3" conda env update -p $NB_PYTHON_PREFIX --file environment-cuda.yml
-conda activate fens2026
-conda clean --all -y
+mkdir -p notebooks
 # because of symlinks and being in the container, this is where the Binder
 # instance thinks the data should go.
-mkdir -p notebooks
 NEMOS_DATA_DIR=/home/jovyan/data python ccn-software-fens-2026/scripts/setup.py
 cp -r ccn-software-fens-2026/notebooks/group_projects/ ./notebooks/
 cp -r ccn-software-fens-2026/notebooks/live_coding/ ./notebooks/
