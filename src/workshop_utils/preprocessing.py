@@ -9,12 +9,19 @@ __all__ = [
 
 def relabel(model):
     """
+    Relabel the states of a fitted GLM-HMM to match the ordering used in
+    Ashwood et al. (2023): engaged state first, followed by biased-left
+    and biased-right states.
+    
+    Parameters
+    ----------
+    model :
+        GLM-HMM model.
+
     Returns
     -------
-    model : 
-        Reordered model
-    relanel :
-        Paper matching labels
+    model :
+        GLM-HMM model with states reordered in-place.
     """
     # the intercept is the bias term
     bias_right = np.flatnonzero(model.intercept_ < -2)
@@ -41,10 +48,23 @@ def select_sessions(
     Select sessions containing 0.2, 0.5 and 0.8 probability blocks,
     and fewer than `max_violations` invalid trials in the specified block.
 
+    Parameters
+    ----------
+    trials : pd.DataFrame
+        Trial-level dataframe with columns 'session', 'probabilityLeft', and 'choice'.
+    max_violations : int, optional
+        Maximum number of invalid trials allowed in the specified block. Default is 10.
+    violation_value : int, optional
+        Value in the 'choice' column that indicates an invalid trial. Default is 0.
+    probability_left : float, optional
+        The probability block to filter trials on. Default is 0.5.
+
     Returns
     -------
     df_trials : pd.DataFrame
         Trials from valid sessions restricted to the selected block.
+    valid_sessions : pd.Index
+        Session identifiers that passed the selection criteria.
     """
 
     has_three_blocks = (

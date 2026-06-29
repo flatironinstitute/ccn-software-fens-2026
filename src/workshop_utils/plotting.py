@@ -990,7 +990,7 @@ def plot_glm_weights(model, n_states=3):
     plt.legend()
     plt.tight_layout()
     plt.show()
-    return fig
+    return None
 
 
 def plot_transition_matrix(model, n_states=3):
@@ -1201,7 +1201,7 @@ def plot_design_matrix(X, choices, n_trials=20):
     coin_ax.imshow(mpimg.imread(str(_COINFLIP_ICON)))
     coin_ax.axis("off")
 
-    plt.show()
+    #plt.show()
     return fig
 
 
@@ -1341,7 +1341,6 @@ def plot_proba_left(trials):
 
     plt.ylabel("P(stimulus on the left)")
     plt.xlabel("Trial number")
-    plt.show()
     return None
 
 class Plot2DMovie:
