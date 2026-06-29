@@ -39,6 +39,8 @@ In this notebook, we will learn how to model **behavioral choices** by fitting a
 
 </div>
 
+## Introduction
+
 ### Behavioral choices: dataset
 
 <div class="render-all">
