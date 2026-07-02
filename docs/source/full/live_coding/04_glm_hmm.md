@@ -224,7 +224,6 @@ ONE.setup(
 )
 ```
 
-
 <div class="render-presenter">
 1. Now we are setting where we want our data to be download, if we run and print it we will get a directory.
 </div>
@@ -541,7 +540,6 @@ valid_choices_idx = np.flatnonzero(valid_choices_bool)
 valid_choices_idx
 ```
 
-
 <div class="render-all">
 We are interested in building a design matrix with three predictors: previous choice, win stay lose shift and signed contrast.
 
@@ -727,6 +725,7 @@ rewards_example = np.array([1,2,3,4])
 
 wsls_basis.compute_features(choices_example, rewards_example)
 ```
+
 <div class="render-all">
 
 The result is an element-wise multiplication, shifted by one. The first element is $1×1=1$, the second is $2×0=0$, and so on. The shift happens for the same reason as the previous choice predictor: NeMoS applies the computation only where it is well-defined, and pads with NaN where it is not. Since a history feature depends on past trials, it is undefined for the first trial — so NeMoS fills that position with NaN.
@@ -896,7 +895,7 @@ print(basis_object)
 
 <div class="render-all">
 
-- Create the design matrix by calling `compute_features`. Select the valid trials by applying the `valid_choices_idx` boolean mask.
+- Create the design matrix by calling `compute_features`.
 
 </div>
 
@@ -1462,6 +1461,7 @@ The utility function below plots the heatmap.
 
 workshop_utils.plot_transition_matrix(model);
 ```
+
 <div class="render-all">
 
 The diagonal entries are all high, which indicates that each state is highly self-persistent. That is, once the animal enters a state, it is very likely to remain in that state on the next trial. Off-diagonal transitions are rare, meaning switches between states occur infrequently. 
@@ -1740,11 +1740,11 @@ accuracies_to_plot_viterbi
 
 # Compute boolean mask for nonzero signed contrast
 mask = signed_contrast != 0
-
 ```
 
 ```{code-cell} ipython3
 :tags: [render-presenter]
+
 # Compute correct choices
 correct_choices = rewards == 1
 correct_choices
@@ -1752,6 +1752,7 @@ correct_choices
 
 ```{code-cell} ipython3
 :tags: [render-presenter]
+
 # Compute the total accuracy applying the mask
 total_accuracy = np.mean(correct_choices[mask])
 total_accuracy
@@ -1759,11 +1760,11 @@ total_accuracy
 
 ```{code-cell} ipython3
 :tags: [render-presenter]
+
 # Store in an array of dim 4
 accuracies_to_plot_viterbi = np.zeros(4)
 accuracies_to_plot_viterbi[0] = total_accuracy
 accuracies_to_plot_viterbi
-
 ```
 
 <div class="render-all"
@@ -1815,7 +1816,6 @@ for s in range(n_states):
 accuracies_to_plot_viterbi[1:] = accuracy_per_state
 accuracies_to_plot_viterbi
 ```
-
 
 <div class="render-all">
 
