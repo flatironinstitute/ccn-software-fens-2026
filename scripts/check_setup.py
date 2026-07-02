@@ -139,6 +139,10 @@ found_figs = set([f.name for f in figure_check_dir.glob("*png")])
 if figure_checks - found_figs:
     errors += 1
     print(":x: Some check figures missing. Did you run [bold]python scripts/setup.py[/bold]?")
+    print("Missing figures:\n")
+    for fname in (figure_checks - found_figs):
+        print(fname)
+
 else:
     print(":white_check_mark: All check figures found!")
 
