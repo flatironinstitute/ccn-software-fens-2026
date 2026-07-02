@@ -123,7 +123,8 @@ else:
     for f in workshop_utils.DOWNLOADABLE_FILES:
         # as far as I could find, retriever doesn't have a "check if file is downloaded"
         # function. (is_available just checks the *url* is available)
-        if not (retriever.abspath / f).exists():
+        matches = list(retriever.abspath.rglob(f))
+        if len(matches) != 1:
             missing_files.append(f)
     if len(missing_files) > 0:
         errors += 1
