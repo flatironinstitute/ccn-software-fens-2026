@@ -7,6 +7,7 @@ except ImportError:
     print("The following will not be pretty...")
 import glob
 import pathlib
+import re
 import sys
 import subprocess
 import warnings
@@ -143,7 +144,15 @@ else:
         print(":white_check_mark: All data files found!")
 
 
-figure_checks = set([f"01-{i:02d}.png" for i in range(7)] + [f"02-{i:02d}.png" for i in range(1, 15)] + [f"pc-{i:02d}.png" for i in range(1, 18)])
+# the expected check figures are whatever the gallery notebooks save via savefig(...)
+# into _static/_check_figs/. scan the markdown sources rather than hardcoding the
+# filenames, so the check stays in sync when figures are added or removed.
+savefig_re = re.compile(r"""savefig\(\s*["'][^"']*_check_figs/([^"'/]+\.png)["']""")
+figure_checks = set()
+for md in gallery_dir.glob("**/*md"):
+    if "checkpoint" in md.name:
+        continue
+    figure_checks |= set(savefig_re.findall(md.read_text()))
 figure_check_dir = pathlib.Path(__file__).parent.parent / "docs" / "source" / "_static" / "_check_figs"
 found_figs = set([f.name for f in figure_check_dir.glob("*png")])
 if figure_checks - found_figs:
