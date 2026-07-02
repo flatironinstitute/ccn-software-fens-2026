@@ -5,6 +5,7 @@ try:
 except ImportError:
     print("rich not found. Try running pip install rich.")
     print("The following will not be pretty...")
+import glob
 import pathlib
 import sys
 import subprocess
@@ -118,19 +119,27 @@ except ModuleNotFoundError:
     print(f":x: workshop utilities not found. Try running [bold]pip install .[/bold] from the github repo.")
 else:
     missing_files = []
+    duplicate_files = []
     from nemos.fetch.fetch_data import _create_retriever
     retriever = _create_retriever()
     for f in workshop_utils.DOWNLOADABLE_FILES:
         # as far as I could find, retriever doesn't have a "check if file is downloaded"
-        # function. (is_available just checks the *url* is available)
-        matches = list(retriever.abspath.rglob(f))
-        if len(matches) != 1:
+        # function. (is_available just checks the *url* is available). the data file may
+        # live in a subdirectory, so search recursively. escape f so filenames are matched
+        # literally rather than being interpreted as glob patterns.
+        matches = list(retriever.abspath.rglob(glob.escape(f)))
+        if len(matches) == 0:
             missing_files.append(f)
-    if len(missing_files) > 0:
+        elif len(matches) > 1:
+            duplicate_files.append(f)
+    if missing_files:
         errors += 1
         print(f":x: Following data files not downloaded: {', '.join(missing_files)}")
         print("   Did you run [bold]python scripts/setup.py[/bold]?")
-    else:
+    if duplicate_files:
+        errors += 1
+        print(f":x: Following data files found in more than one location: {', '.join(duplicate_files)}")
+    if not missing_files and not duplicate_files:
         print(":white_check_mark: All data files found!")
 
 
