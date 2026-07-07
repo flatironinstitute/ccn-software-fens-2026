@@ -33,4 +33,6 @@ jobs:
           uv run scripts/setup.py
       - name: Check Setup
         run: |
-           uv run scripts/check_setup.py
+           # windows runner on github has issue with unicode encoding, this solution from
+           # https://github.com/flet-dev/flet/issues/5272
+           PYTHONUTF8=1 uv run scripts/check_setup.py
