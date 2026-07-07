@@ -180,3 +180,4 @@ else:
     print("the lobby of the event hotel (Meliá Barcelona Sky, Pere IV 272-286 Barcelona 08005)")
     print("during the afternoon of July 2nd, 2026. ")
     print("Be prepared to show us the output of this command, so we can try and fix your problem as quickly as possible!")
+    sys.exit(1)
