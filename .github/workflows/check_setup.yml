@@ -1,4 +1,4 @@
-name: check_jax_version
+name: check_setup
 on:
   push:
   workflow_dispatch:
