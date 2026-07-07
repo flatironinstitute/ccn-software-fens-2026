@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# windows has issue with encoding, this solution from
+# https://github.com/Textualize/rich/discussions/3766
+import os
+os.environ["PYTHONIOENCODING"] = "utf-8"
+
 try:
     from rich import print
 except ImportError:
@@ -11,7 +16,6 @@ import re
 import sys
 import subprocess
 import warnings
-import os
 from packaging.version import Version
 
 warnings.filterwarnings(
