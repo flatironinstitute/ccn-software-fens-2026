@@ -32,5 +32,7 @@ jobs:
         run: |
           uv run scripts/setup.py
       - name: Check Setup
+        # windows has issue with encoding, this solution from
+        # https://github.com/Textualize/rich/discussions/3766
         run: |
-          uv run scripts/check_setup.py
+          PYTHONIOENCODING=utf-8 uv run scripts/check_setup.py
