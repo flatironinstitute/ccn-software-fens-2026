@@ -3,7 +3,7 @@
 # windows runner on github has issue with unicode encoding, this solution from
 # https://github.com/flet-dev/flet/issues/5272
 import os
-os.environ["PYTHONUTF8"] = 1
+os.environ["PYTHONUTF8"] = "1"
 
 try:
     from rich import print
