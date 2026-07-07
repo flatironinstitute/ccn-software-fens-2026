@@ -35,4 +35,4 @@ jobs:
         run: |
            # windows runner on github has issue with unicode encoding, this solution from
            # https://github.com/flet-dev/flet/issues/5272
-           PYTHONUTF8=1 uv run scripts/check_setup.py
+           uv run python -X utf8=1 scripts/check_setup.py
