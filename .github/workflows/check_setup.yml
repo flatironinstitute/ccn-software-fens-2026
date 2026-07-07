@@ -1,0 +1,36 @@
+name: check_jax_version
+on:
+  push:
+  workflow_dispatch:
+  schedule:
+  - cron: 0 0 * * 0     # weekly
+
+permissions: {}
+
+jobs:
+  run_setup:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    name: Run setup and check setup to ensure they work
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: "Set up Python"
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 #v6.2.0
+        with:
+          python-version-file: "pyproject.toml"
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          enable-cache: true
+      - name: Setup
+        run: |
+          uv run scripts/setup.py
+      - name: Check Setup
+        run: |
+          uv run scripts/check_setup.py
